@@ -104,6 +104,12 @@ def main():
         run(f'git config user.email "{email or name + "@users.noreply.github.com"}"')
         run(f'git config user.name "{name}"')
 
+    # 5b. Pull first so we don't conflict with bot commits from GitHub Actions
+    rc, _ = run("git remote", check=False)
+    if "origin" in (_ or ""):
+        print("→ Pulling latest from origin (auto-rebase)…")
+        run("git pull --rebase origin main", check=False)
+
     # 6. Stage and commit
     print("→ Staging files…")
     run("git add -A")
