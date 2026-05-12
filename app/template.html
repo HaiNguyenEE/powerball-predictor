@@ -125,6 +125,10 @@ main{padding:8px 0}
 /* Disclaimer banner */
 .warn{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#fca5a5;line-height:1.5}
 .warn b{color:#fecaca}
+.global-warn{margin:8px 0;font-size:12px}
+.global-warn .warn-summary{user-select:none}
+.global-warn.expanded #warnChevron{transform:rotate(180deg)}
+.global-warn .warn-body{font-size:12px}
 
 /* Math block */
 .math{background:#0a0e15;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:"SF Mono",Monaco,Consolas,monospace;font-size:12px;color:#a5d8ff;overflow-x:auto;white-space:pre;line-height:1.5}
@@ -184,18 +188,27 @@ hr.line{border:none;border-top:1px solid var(--line);margin:14px 0}
   <button class="tab" data-tab="explain">Math</button>
 </div></nav>
 
+<!-- GLOBAL BANNER — visible on every tab -->
+<div class="container">
+  <div class="warn global-warn" id="globalWarn">
+    <div class="warn-summary" onclick="toggleWarn()" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;gap:8px">
+      <span><b>⚠ Read before using · Liability disclaimer / Miễn trừ trách nhiệm</b> — <span class="muted" style="font-weight:400">tap to expand</span></span>
+      <span id="warnChevron" style="transition:transform .2s">▼</span>
+    </div>
+    <div class="warn-body" id="warnBody" style="display:none;margin-top:10px">
+      <b>⚠ Read before using.</b> Powerball is a uniform i.i.d. random variable. A chi-squared goodness-of-fit test on 1,348 historical draws <b>fails to reject H₀ uniform</b> (χ²<sub>white</sub>=83.98 &lt; 88.25 critical; χ²<sub>PB</sub>=23.79 &lt; 37.65 critical). The mutual information between past results and the next draw is zero (Data Processing Inequality). This app is a <b>statistical research and analysis tool</b>, not a fortune-teller. The true probability of winning the jackpot on any single ticket is always <b>1 in 292,201,338</b>. Please play responsibly.
+      <hr style="border:none;border-top:1px solid rgba(239,68,68,.3);margin:10px 0">
+      <b>🛡 Liability disclaimer.</b> No liability is assumed for any losses, financial or otherwise, resulting from the use of this tool's predictions or outputs. By using this app, you acknowledge that lottery outcomes are random, that no model can reliably predict them, and that you bear sole and full responsibility for any tickets you purchase or decisions you make.
+      <br><br>
+      <b>🛡 Miễn trừ trách nhiệm.</b> Công cụ này <b>không chịu trách nhiệm</b> với bất kỳ tổn thất nào (tài chính hay hình thức khác) phát sinh từ việc sử dụng kết quả dự đoán hoặc đầu ra của ứng dụng. Khi sử dụng app, bạn xác nhận rằng kết quả xổ số là ngẫu nhiên, không một mô hình nào có thể dự đoán chính xác, và bạn <b>tự chịu toàn bộ trách nhiệm</b> với mọi vé mua hoặc quyết định cá nhân.
+    </div>
+  </div>
+</div>
+
 <main class="container">
 
 <!-- DASHBOARD -->
 <section id="dashboard" class="section active">
-  <div class="warn">
-    <b>⚠ Read before using.</b> Powerball is a uniform i.i.d. random variable. A chi-squared goodness-of-fit test on 1,348 historical draws <b>fails to reject H₀ uniform</b> (χ²<sub>white</sub>=83.98 &lt; 88.25 critical; χ²<sub>PB</sub>=23.79 &lt; 37.65 critical). The mutual information between past results and the next draw is zero (Data Processing Inequality). This app is a <b>statistical research and analysis tool</b>, not a fortune-teller. The true probability of winning the jackpot on any single ticket is always <b>1 in 292,201,338</b>. Please play responsibly.
-    <hr style="border:none;border-top:1px solid rgba(239,68,68,.3);margin:10px 0">
-    <b>🛡 Liability disclaimer.</b> No liability is assumed for any losses, financial or otherwise, resulting from the use of this tool's predictions or outputs. By using this app, you acknowledge that lottery outcomes are random, that no model can reliably predict them, and that you bear sole and full responsibility for any tickets you purchase or decisions you make.
-    <br><br>
-    <b>🛡 Miễn trừ trách nhiệm.</b> Công cụ này <b>không chịu trách nhiệm</b> với bất kỳ tổn thất nào (tài chính hay hình thức khác) phát sinh từ việc sử dụng kết quả dự đoán hoặc đầu ra của ứng dụng. Khi sử dụng app, bạn xác nhận rằng kết quả xổ số là ngẫu nhiên, không một mô hình nào có thể dự đoán chính xác, và bạn <b>tự chịu toàn bộ trách nhiệm</b> với mọi vé mua hoặc quyết định cá nhân.
-  </div>
-
   <div class="grid-4">
     <div class="stat"><div class="stat-label">Total draws</div><div class="stat-value tabular" id="statN">—</div><div class="stat-sub">5/69 + 1/26 era</div></div>
     <div class="stat"><div class="stat-label">Jackpot odds</div><div class="stat-value tabular">1 : 292.2M</div><div class="stat-sub">C(69,5) × 26</div></div>
@@ -1588,6 +1601,23 @@ window.regenerateQuick = regenerateQuick;
 window.updateWeight = updateWeight;
 window.resortPredictions = resortPredictions;
 window.renderCombos = renderCombos;
+window.toggleWarn = function(){
+  const w = document.getElementById('globalWarn');
+  const body = document.getElementById('warnBody');
+  if (!w || !body) return;
+  const open = w.classList.toggle('expanded');
+  body.style.display = open ? 'block' : 'none';
+  try { localStorage.setItem('pb_warn_open', open ? '1' : '0'); } catch(e){}
+};
+// Restore last warn state on load
+window.addEventListener('DOMContentLoaded', () => {
+  try {
+    if (localStorage.getItem('pb_warn_open') === '1') {
+      document.getElementById('globalWarn')?.classList.add('expanded');
+      const b = document.getElementById('warnBody'); if (b) b.style.display = 'block';
+    }
+  } catch(e){}
+});
 </script>
 
 </body>
