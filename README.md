@@ -1,8 +1,16 @@
 # Powerball Predictor — Ensemble Lab
 
+[![Auto-update](https://github.com/HaiNguyenEE/powerball-predictor/actions/workflows/update-data.yml/badge.svg)](https://github.com/HaiNguyenEE/powerball-predictor/actions/workflows/update-data.yml)
+[![GitHub Pages](https://img.shields.io/badge/Live%20app-hainguyenee.github.io%2Fpowerball--predictor-blue)](https://hainguyenee.github.io/powerball-predictor/)
+
 A self-contained statistical research app for US Powerball (5/69 + 1/26, ruleset since 2015-10-07).
 Built as a single HTML file with embedded historical data. Open it in any browser — on laptop, phone,
 or transfer to another machine and it still works offline.
+
+**Live URL:** https://hainguyenee.github.io/powerball-predictor/
+
+**Auto-updates** after every drawing (Mon/Wed/Sat ~10:59 PM ET) via GitHub Actions —
+fetches new results from NY Open Data, rebuilds the app, and redeploys. You never have to do anything.
 
 ## ⚠️ Read this first
 
