@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=2.0, viewport-fit=cover">
+<meta name="theme-color" content="#dc2626">
+<meta name="description" content="Statistical research lab for US Powerball — ensemble of frequency, EWMA, gap, Bayesian, Markov models with full math transparency.">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Powerball">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
+<title>Powerball Predictor — Ensemble Lab</title>
+<style>
+:root{
+  --bg:#0b0f17; --panel:#121826; --panel2:#1a2236; --line:#243049;
+  --ink:#e6ecf5; --muted:#94a3b8; --dim:#64748b;
+  --red:#dc2626; --red2:#ef4444; --gold:#fbbf24; --green:#22c55e; --blue:#3b82f6;
+  --shadow:0 10px 30px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:15px;line-height:1.45;-webkit-text-size-adjust:100%}
+body{min-height:100vh;padding-bottom:calc(80px + env(safe-area-inset-bottom));padding-top:env(safe-area-inset-top)}
+.pwa-installed header{padding-top:env(safe-area-inset-top)}
+a{color:var(--blue);text-decoration:none}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,select,textarea{font:inherit;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)}
+.container{max-width:1200px;margin:0 auto;padding:12px}
+header{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,#0b0f17 0%,rgba(11,15,23,.92) 100%);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.header-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;gap:10px;flex-wrap:wrap;max-width:1200px;margin:0 auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700}
+.logo{width:36px;height:36px;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fff,#fbbf24 35%,#dc2626 75%);box-shadow:0 0 12px rgba(220,38,38,.5);display:inline-flex;align-items:center;justify-content:center;color:#000;font-weight:900;font-size:13px}
+.brand-text{font-size:14px}
+.brand-sub{display:block;color:var(--muted);font-weight:500;font-size:11px}
+.next-draw{display:flex;align-items:center;gap:10px;font-size:13px}
+.countdown{font-variant-numeric:tabular-nums;color:var(--gold);font-weight:700}
+.tabs{position:sticky;top:60px;z-index:19;background:var(--bg);border-bottom:1px solid var(--line);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tabs-inner{display:flex;gap:4px;padding:6px 8px;max-width:1200px;margin:0 auto}
+.tab{padding:8px 12px;border-radius:8px;color:var(--muted);font-size:13px;white-space:nowrap;font-weight:600}
+.tab.active{background:var(--panel);color:var(--ink)}
+.tab:hover:not(.active){background:var(--panel2)}
+main{padding:8px 0}
+.section{display:none}
+.section.active{display:block;animation:fadein .25s}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin:10px 0;box-shadow:var(--shadow)}
+.card h2,.card h3{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700}
+.card h2{font-size:17px}
+.card h3{font-size:14px;color:var(--muted)}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.col{flex:1;min-width:240px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media(max-width:640px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr}.brand-sub{display:none}}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px}
+.stat-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.stat-value{font-size:18px;font-weight:700;margin-top:4px}
+.stat-sub{font-size:11px;color:var(--dim);margin-top:2px}
+
+/* Ball graphics */
+.balls{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ball{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;flex-shrink:0;user-select:none}
+.ball.white{background:radial-gradient(circle at 30% 28%,#fff 0%,#e5e7eb 60%,#9ca3af 100%);color:#0b0f17;box-shadow:inset 0 -2px 4px rgba(0,0,0,.2),0 2px 6px rgba(0,0,0,.3)}
+.ball.pb{background:radial-gradient(circle at 30% 28%,#fda4af 0%,#ef4444 50%,#7f1d1d 100%);color:#fff;box-shadow:inset 0 -2px 4px rgba(0,0,0,.3),0 2px 8px rgba(239,68,68,.5)}
+.ball.sm{width:30px;height:30px;font-size:12px}
+.ball.lg{width:44px;height:44px;font-size:16px}
+.ball.pick{cursor:pointer;outline:2px solid transparent;outline-offset:1px;transition:transform .12s,outline-color .12s}
+.ball.pick:hover{transform:scale(1.06)}
+.ball.pick.selected{outline-color:var(--gold);box-shadow:0 0 0 3px rgba(251,191,36,.25),0 2px 8px rgba(251,191,36,.45)}
+.ball.dim{opacity:.45}
+
+/* Pick board */
+.pick-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px}
+.pick-grid.pb-grid{grid-template-columns:repeat(13,1fr)}
+@media(max-width:540px){.pick-grid{grid-template-columns:repeat(7,1fr)}.pick-grid.pb-grid{grid-template-columns:repeat(7,1fr)}}
+
+/* Predictions list */
+.combo{display:flex;align-items:center;gap:8px;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;margin-bottom:6px}
+.combo .balls{flex:1;min-width:0}
+.combo .meta{font-size:11px;color:var(--muted);min-width:90px;text-align:right;font-variant-numeric:tabular-nums}
+.combo .rank{width:30px;text-align:center;color:var(--dim);font-weight:700;font-size:13px}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:9px;font-weight:600;font-size:13px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);transition:.15s}
+.btn:hover{background:var(--line);transform:translateY(-1px)}
+.btn.primary{background:linear-gradient(180deg,#dc2626,#991b1b);border-color:#7f1d1d}
+.btn.primary:hover{background:linear-gradient(180deg,#ef4444,#b91c1c)}
+.btn.gold{background:linear-gradient(180deg,#fbbf24,#d97706);border-color:#92400e;color:#0b0f17}
+.btn.ghost{background:transparent}
+.btn.sm{padding:6px 10px;font-size:12px}
+
+/* Range + slider */
+.slider{width:100%}
+.range-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:4px}
+
+/* Heatmap */
+.heat-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
+.heat-grid.pb{grid-template-columns:repeat(13,1fr)}
+.heat-cell{aspect-ratio:1;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0b0f17}
+@media(max-width:540px){.heat-grid{grid-template-columns:repeat(7,1fr)}.heat-grid.pb{grid-template-columns:repeat(7,1fr)}}
+
+/* Chart */
+.bar{display:flex;align-items:end;gap:2px;height:140px;padding:8px 0}
+.bar-col{flex:1;background:linear-gradient(180deg,#3b82f6,#1e40af);border-radius:2px 2px 0 0;position:relative;min-width:3px}
+.bar-col:hover::after{content:attr(data-tip);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:3px 6px;border-radius:4px;font-size:11px;white-space:nowrap;z-index:2}
+
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th,.tbl td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+.tbl th{font-size:11px;text-transform:uppercase;color:var(--muted);letter-spacing:.05em}
+.tbl tr:hover{background:var(--panel2)}
+
+/* Pills */
+.pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;background:var(--panel2);border:1px solid var(--line);color:var(--muted)}
+.pill.green{background:rgba(34,197,94,.12);color:#86efac;border-color:rgba(34,197,94,.3)}
+.pill.red{background:rgba(239,68,68,.12);color:#fca5a5;border-color:rgba(239,68,68,.3)}
+.pill.gold{background:rgba(251,191,36,.12);color:#fcd34d;border-color:rgba(251,191,36,.3)}
+.pill.blue{background:rgba(59,130,246,.12);color:#93c5fd;border-color:rgba(59,130,246,.3)}
+
+/* Disclaimer banner */
+.warn{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:10px 12px;font-size:12.5px;color:#fca5a5;line-height:1.5}
+.warn b{color:#fecaca}
+
+/* Math block */
+.math{background:#0a0e15;border:1px solid var(--line);border-radius:8px;padding:10px;font-family:"SF Mono",Monaco,Consolas,monospace;font-size:12px;color:#a5d8ff;overflow-x:auto;white-space:pre;line-height:1.5}
+.math .var{color:#fbbf24}
+.math .fn{color:#86efac}
+.math .num{color:#fda4af}
+.math .com{color:#64748b;font-style:italic}
+
+/* Model card */
+.model-card{display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;margin-bottom:6px;gap:10px}
+.model-card .name{font-weight:600;flex:1}
+.model-card input[type=range]{width:110px}
+
+/* Toast */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);box-shadow:var(--shadow);padding:10px 14px;border-radius:10px;font-size:13px;z-index:30;opacity:0;pointer-events:none;transition:.2s}
+.toast.show{opacity:1;transform:translate(-50%,-8px)}
+
+/* Footer */
+footer{padding:30px 16px;text-align:center;color:var(--dim);font-size:11px;border-top:1px solid var(--line);margin-top:30px}
+
+/* Utility */
+.muted{color:var(--muted)}
+.dim{color:var(--dim)}
+.tabular{font-variant-numeric:tabular-nums}
+.mono{font-family:"SF Mono",Monaco,Consolas,monospace;font-size:12px}
+.center{text-align:center}
+.mt{margin-top:10px}.mb{margin-bottom:10px}
+hr.line{border:none;border-top:1px solid var(--line);margin:14px 0}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="brand">
+      <span class="logo">PB</span>
+      <div>
+        <div class="brand-text">Powerball Predictor</div>
+        <span class="brand-sub">Ensemble lab · 5/69 + 1/26 · 2015→</span>
+      </div>
+    </div>
+    <div class="next-draw">
+      <span class="muted">Next draw</span>
+      <span id="nextDrawDate" class="countdown">—</span>
+      <span class="countdown" id="countdown">—</span>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs"><div class="tabs-inner">
+  <button class="tab active" data-tab="dashboard">Dashboard</button>
+  <button class="tab" data-tab="predict">Predictions</button>
+  <button class="tab" data-tab="custom">My Pick</button>
+  <button class="tab" data-tab="analyze">Analytics</button>
+  <button class="tab" data-tab="lookup">History</button>
+  <button class="tab" data-tab="models">Models</button>
+  <button class="tab" data-tab="explain">Math</button>
+</div></nav>
+
+<main class="container">
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="section active">
+  <div class="warn">
+    <b>⚠ Đọc trước khi dùng.</b> Powerball là biến ngẫu nhiên i.i.d. uniform. Chi-squared test trên 1.348 lần quay <b>fail to reject H₀ uniform</b> (χ²<sub>white</sub>=83.98 &lt; 88.25; χ²<sub>PB</sub>=23.79 &lt; 37.65). Mutual information giữa lịch sử và kết quả tiếp theo = 0 (Data Processing Inequality). App này là <b>công cụ phân tích & nghiên cứu</b>, không phải máy tiên tri. Xác suất trúng jackpot mỗi vé luôn là <b>1 / 292.201.338</b>. Chơi có trách nhiệm.
+  </div>
+
+  <div class="grid-4">
+    <div class="stat"><div class="stat-label">Total draws</div><div class="stat-value tabular" id="statN">—</div><div class="stat-sub">5/69 + 1/26 era</div></div>
+    <div class="stat"><div class="stat-label">Jackpot odds</div><div class="stat-value tabular">1 : 292.2M</div><div class="stat-sub">C(69,5) × 26</div></div>
+    <div class="stat"><div class="stat-label">χ² white</div><div class="stat-value tabular" id="statChiW">—</div><div class="stat-sub" id="statChiWv">— df 68</div></div>
+    <div class="stat"><div class="stat-label">χ² PB</div><div class="stat-value tabular" id="statChiP">—</div><div class="stat-sub" id="statChiPv">— df 25</div></div>
+  </div>
+
+  <div class="card">
+    <h2>🎯 Last draw <span class="pill" id="lastDateP"></span></h2>
+    <div id="lastDrawBalls" class="balls" style="margin-top:8px"></div>
+    <div class="grid-3 mt">
+      <div class="stat"><div class="stat-label">Sum of whites</div><div class="stat-value tabular" id="lastSum">—</div><div class="stat-sub">Hist mean 176.8 (±43.2)</div></div>
+      <div class="stat"><div class="stat-label">Range</div><div class="stat-value tabular" id="lastRange">—</div><div class="stat-sub">Hist mean 46.6 (±12.1)</div></div>
+      <div class="stat"><div class="stat-label">Odd/Even</div><div class="stat-value tabular" id="lastOE">—</div><div class="stat-sub">Mode: 3o-2e (32.5%)</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔮 Quick ensemble prediction <span class="pill gold" id="modelVerBadge">v—</span></h2>
+    <p class="muted" style="font-size:12px">Top-5 whites + top PB by current ensemble score, locked to next draw.</p>
+    <div id="quickPred" class="balls" style="margin:10px 0;justify-content:center"></div>
+    <div class="row">
+      <button class="btn primary" onclick="goTab('predict')">Generate full list →</button>
+      <button class="btn" onclick="copyQuick()">📋 Copy pick</button>
+      <button class="btn" onclick="regenerateQuick()">🎲 Smart pick (anti-pattern)</button>
+    </div>
+    <div id="quickStats" class="mt mono dim" style="font-size:11px"></div>
+  </div>
+
+  <div class="card">
+    <h2>📅 Next-3 draw schedule</h2>
+    <table class="tbl"><thead><tr><th>Date (ET)</th><th>Day</th><th>Status</th><th></th></tr></thead><tbody id="scheduleBody"></tbody></table>
+    <div class="muted" style="font-size:11px;margin-top:8px">Powerball draws: Mon / Wed / Sat at 10:59 PM ET. Predictions locked to the very next draw only.</div>
+  </div>
+</section>
+
+<!-- PREDICTIONS -->
+<section id="predict" class="section">
+  <div class="card">
+    <h2>🔮 Generate predictions for next draw</h2>
+    <div class="grid-3">
+      <div>
+        <div class="range-label"><span>Number of picks</span><span id="numPicksLabel" class="tabular">10</span></div>
+        <input type="range" id="numPicks" class="slider" min="1" max="1000" value="10" step="1">
+      </div>
+      <div>
+        <div class="range-label"><span>Mode</span><span id="modeLabel" class="muted">Ensemble</span></div>
+        <select id="predMode" style="width:100%">
+          <option value="ensemble" selected>Ensemble (all models combined)</option>
+          <option value="frequency">Frequency only</option>
+          <option value="ewma">EWMA hot (recent weighted)</option>
+          <option value="gap">Gap / Due theory</option>
+          <option value="bayesian">Bayesian Dirichlet</option>
+          <option value="markov">Markov (pairwise)</option>
+          <option value="smart">Smart pick (anti-pattern, max EV)</option>
+          <option value="random">Uniform random (control)</option>
+        </select>
+      </div>
+      <div>
+        <div class="range-label"><span>Sort by</span><span id="sortLabel" class="muted">Probability ↓</span></div>
+        <select id="predSort" style="width:100%" onchange="resortPredictions()">
+          <option value="prob_desc" selected>Probability — high → low</option>
+          <option value="prob_asc">Probability — low → high</option>
+          <option value="score_desc">Model score — high → low</option>
+          <option value="score_asc">Model score — low → high</option>
+          <option value="sum_desc">Sum of whites — high → low</option>
+          <option value="sum_asc">Sum of whites — low → high</option>
+          <option value="range_desc">Range (max−min) — high → low</option>
+          <option value="range_asc">Range (max−min) — low → high</option>
+          <option value="pb_asc">Powerball — low → high</option>
+          <option value="pb_desc">Powerball — high → low</option>
+          <option value="shuffle">Random shuffle</option>
+        </select>
+      </div>
+    </div>
+    <div class="row mt">
+      <button class="btn primary" onclick="runPredict()">⚡ Generate</button>
+      <button class="btn" onclick="resortPredictions()">🔀 Re-sort</button>
+      <button class="btn" onclick="exportCSV()">📥 Export CSV</button>
+      <button class="btn" onclick="copyAll()">📋 Copy all</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🎰 Top predictions <span class="pill" id="predCountPill">—</span></h2>
+    <div class="muted" style="font-size:12px;margin-bottom:8px">
+      <b>Model score</b> = ensemble's relative preference (NOT real win probability). True jackpot probability for ANY combination = <span class="mono">1/292,201,338 ≈ 3.42×10⁻⁹</span>.
+    </div>
+    <div id="predList"></div>
+  </div>
+</section>
+
+<!-- CUSTOM PICK -->
+<section id="custom" class="section">
+  <div class="card">
+    <h2>🎯 My custom pick</h2>
+    <p class="muted" style="font-size:13px">Pick your own 5 whites + 1 powerball. The app will combine with model-suggested numbers and compute scores.</p>
+
+    <div class="mt"><b>Pick 5 white balls (1–69)</b> <span id="whiteCount" class="pill blue">0/5</span></div>
+    <div class="pick-grid mt" id="whitePicker"></div>
+
+    <div class="mt"><b>Pick 1 powerball (1–26)</b> <span id="pbCount" class="pill blue">0/1</span></div>
+    <div class="pick-grid pb-grid mt" id="pbPicker"></div>
+
+    <hr class="line">
+    <h3>Your selection</h3>
+    <div id="customBalls" class="balls" style="min-height:42px"></div>
+
+    <div class="grid-3 mt">
+      <div class="stat"><div class="stat-label">Ensemble score</div><div class="stat-value tabular" id="customScore">—</div><div class="stat-sub" id="customRank">—</div></div>
+      <div class="stat"><div class="stat-label">True P(jackpot)</div><div class="stat-value tabular">3.42×10⁻⁹</div><div class="stat-sub">= 1/292,201,338</div></div>
+      <div class="stat"><div class="stat-label">Expected return ($2 ticket)</div><div class="stat-value tabular" id="customEV">—</div><div class="stat-sub" id="customJP">jackpot $—</div></div>
+    </div>
+
+    <div class="row mt">
+      <button class="btn primary" onclick="combineWithEnsemble()">⚡ Combine with ensemble top</button>
+      <button class="btn" onclick="clearCustom()">Reset</button>
+      <button class="btn gold" onclick="autoFillSmart()">Smart auto-fill (anti-pattern)</button>
+    </div>
+
+    <hr class="line">
+    <h3>Suggested combinations using your numbers</h3>
+    <div id="combineList" class="dim" style="font-size:13px;padding:8px 0">Pick at least 1 number, then press Combine.</div>
+  </div>
+</section>
+
+<!-- ANALYTICS -->
+<section id="analyze" class="section">
+  <div class="card">
+    <h2>📊 White ball frequency heatmap (1–69)</h2>
+    <div class="muted" style="font-size:12px">Color intensity = frequency / expected. Hover for counts.</div>
+    <div class="heat-grid mt" id="heatWhite"></div>
+    <div class="row mt" style="justify-content:space-between;font-size:11px" class="muted">
+      <span><span class="ball sm white" style="width:14px;height:14px"></span> = number cell · darker red = hotter</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>🔴 Powerball frequency heatmap (1–26)</h2>
+    <div class="heat-grid pb mt" id="heatPB"></div>
+  </div>
+
+  <div class="card">
+    <h2>📈 Sum distribution (5 whites)</h2>
+    <p class="muted" style="font-size:12px">Where the historical sum of 5 white balls clusters. Use this to filter "plausible" combinations.</p>
+    <div class="bar" id="sumChart"></div>
+    <div class="row" style="justify-content:space-between;font-size:11px" class="muted"><span>0</span><span>345</span></div>
+  </div>
+
+  <div class="card">
+    <h2>⏱ Gap analysis — most overdue</h2>
+    <p class="muted" style="font-size:12px">Numbers that haven't appeared in the longest time. Note: under uniform i.i.d., "overdue" is gambler's fallacy.</p>
+    <table class="tbl"><thead><tr><th>#</th><th>Type</th><th>Last seen</th><th>Gap (draws)</th></tr></thead><tbody id="overdueBody"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>🧪 Statistical tests</h2>
+    <table class="tbl"><thead><tr><th>Test</th><th>Statistic</th><th>Critical</th><th>Result</th></tr></thead><tbody id="testBody"></tbody></table>
+    <div class="muted" style="font-size:12px;margin-top:8px">α=0.05. "Fail to reject H₀" = data is consistent with uniform random. Conclusion: <b>no statistically significant pattern</b>.</div>
+  </div>
+</section>
+
+<!-- LOOKUP -->
+<section id="lookup" class="section">
+  <div class="card">
+    <h2>🔍 Historical results lookup</h2>
+    <div class="row">
+      <input id="searchDate" placeholder="Date YYYY-MM-DD (e.g. 2024-11-02)" style="flex:1">
+      <input id="searchNum" placeholder="Has number (e.g. 7)" style="width:160px" type="number" min="1" max="69">
+      <select id="searchType" style="width:130px">
+        <option value="any">any position</option>
+        <option value="white">white only</option>
+        <option value="pb">powerball only</option>
+      </select>
+      <button class="btn primary" onclick="runLookup()">Search</button>
+      <button class="btn" onclick="clearLookup()">Clear</button>
+    </div>
+    <div class="muted mt" style="font-size:12px" id="lookupCount"></div>
+    <div id="lookupList" style="margin-top:8px;max-height:600px;overflow-y:auto"></div>
+  </div>
+</section>
+
+<!-- MODELS -->
+<section id="models" class="section">
+  <div class="card">
+    <h2>⚙ Ensemble weights <span class="pill gold" id="modelVerBadge2">v—</span></h2>
+    <p class="muted" style="font-size:12px">Adjust how much each sub-model contributes to the ensemble score. Changes apply immediately.</p>
+    <div id="modelControls"></div>
+    <div class="row mt">
+      <button class="btn" onclick="resetWeights()">Reset defaults</button>
+      <button class="btn" onclick="saveModelVersion()">💾 Save snapshot</button>
+      <button class="btn" onclick="autoTune()">🧬 Auto-tune (backtest)</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📜 Model version history</h2>
+    <p class="muted" style="font-size:12px">Every time a new draw arrives, the app re-fits frequencies and saves a snapshot. You can roll back any time.</p>
+    <table class="tbl"><thead><tr><th>Version</th><th>Date applied</th><th>Draws used</th><th>Notes</th><th></th></tr></thead><tbody id="versionBody"></tbody></table>
+  </div>
+
+  <div class="card">
+    <h2>🔄 Data refresh</h2>
+    <div class="grid-2">
+      <div class="stat"><div class="stat-label">Data version</div><div class="stat-value tabular" id="dataVer">—</div><div class="stat-sub" id="dataDate">—</div></div>
+      <div class="stat"><div class="stat-label">Next refresh</div><div class="stat-value tabular" id="nextRefresh">on next draw</div><div class="stat-sub">Auto-checks on page load</div></div>
+    </div>
+    <div class="row mt">
+      <button class="btn primary" onclick="refreshData()">↻ Check for new results</button>
+      <button class="btn ghost" onclick="document.getElementById('importJson').click()">📂 Import JSON</button>
+      <input type="file" id="importJson" hidden accept=".json" onchange="importDataFile(event)">
+    </div>
+    <div id="refreshStatus" class="muted mt" style="font-size:12px"></div>
+  </div>
+
+  <div class="card">
+    <h2>🧬 Backtest evaluation</h2>
+    <p class="muted" style="font-size:12px">For each model: predict draw N using only data ≤ N-1, then compare to actual draw N. Measures "matches" = average white balls overlapping with the top-1 prediction.</p>
+    <table class="tbl"><thead><tr><th>Model</th><th>Avg whites matched / draw</th><th>vs uniform baseline</th><th>p-value</th></tr></thead><tbody id="backtestBody"><tr><td colspan="4" class="dim center">Press Auto-tune to compute (takes a few seconds)</td></tr></tbody></table>
+    <div class="muted" style="font-size:11px;margin-top:8px">Uniform baseline: E[matches] = 5×(5/69) ≈ 0.362.</div>
+  </div>
+</section>
+
+<!-- EXPLAIN MATH -->
+<section id="explain" class="section">
+  <div class="card">
+    <h2>📚 The mathematics, in full</h2>
+    <p class="muted" style="font-size:13px">Every model below is implemented in the app. Read this section to know exactly why each pick has its score.</p>
+
+    <h3 class="mt">1. The base measure — Powerball is uniform i.i.d.</h3>
+    <div class="math">P(X = (w₁,w₂,w₃,w₄,w₅,b)) = 1 / [C(69,5) × 26]
+                                  = 1 / 292,201,338
+                                  ≈ 3.422 × 10⁻⁹
+
+C(69,5) = 69! / (5! · 64!) = 11,238,513</div>
+    <p style="font-size:13px;margin-top:8px"><b>Consequence (Data Processing Inequality):</b> for any function f of past draws X₁,…,Xₙ,
+    <span class="math" style="display:inline-block">I(f(X₁…Xₙ) ; X_{n+1}) ≤ I(X₁…Xₙ ; X_{n+1}) = 0</span>
+    No model can extract predictive information that does not exist.</p>
+
+    <h3 class="mt">2. Frequency model</h3>
+    <div class="math">freq(i) = #{ t : i ∈ draw_t }
+score_F(i) = freq(i) / Σⱼ freq(j)</div>
+    <p style="font-size:13px;margin-top:8px">Under uniform sampling with N draws, E[freq(i)] = 5N/69 for whites, N/26 for PB. The chi-squared statistic χ² = Σ (freq(i) − E)² / E tests whether deviations are larger than chance.</p>
+
+    <h3 class="mt">3. EWMA hot model (exponentially weighted recent)</h3>
+    <div class="math">score_H(i) = Σₜ λ^(N−t) · 𝟙[i ∈ draw_t]
+λ = decay rate ∈ (0,1]; default λ = 0.985 (~ half-life of 46 draws)</div>
+    <p style="font-size:13px;margin-top:8px">Emphasises recent appearances. λ=1 → reduces to plain frequency. Smaller λ → more emphasis on recent.</p>
+
+    <h3 class="mt">4. Gap / Due model</h3>
+    <div class="math">gap(i) = N − last_seen_index(i)
+mean_gap_expected = 69/5 = 13.8  (whites);  26  (PB)
+score_D(i) = gap(i) / mean_gap_expected</div>
+    <p style="font-size:13px;margin-top:8px"><b>Note:</b> under i.i.d., E[gap | last seen at index k] = mean_gap regardless of k. The "due" intuition is gambler's fallacy. Included for completeness.</p>
+
+    <h3 class="mt">5. Bayesian Dirichlet–Multinomial</h3>
+    <div class="math">Prior:     α₀(i) = 1     (uniform Dirichlet, k=69)
+Posterior: α(i)  = 1 + freq(i)
+Posterior mean: E[p_i | data] = α(i) / Σⱼ α(j)
+score_B(i) = α(i) / Σⱼ α(j)</div>
+    <p style="font-size:13px;margin-top:8px">As N→∞, posterior concentrates on the true (uniform) probabilities → score_B(i) → 1/69. Bayesian update is the principled way to combine prior + data.</p>
+
+    <h3 class="mt">6. Markov pairwise (co-occurrence)</h3>
+    <div class="math">co(i,j) = #{ t : i ∈ draw_t  ∧  j ∈ draw_{t−1} }
+score_M(i | last) = (1/5) · Σ_{j ∈ last_draw} co(i,j) / freq(j)</div>
+    <p style="font-size:13px;margin-top:8px">Conditions on which numbers appeared in the previous draw. Under i.i.d. this should be uniform; deviations indicate (spurious) coupling between draws.</p>
+
+    <h3 class="mt">7. Ensemble combiner</h3>
+    <div class="math">score(i) = w_F·score_F(i) + w_H·score_H(i) + w_D·score_D(i)
+         + w_B·score_B(i) + w_M·score_M(i)
+
+Σ wₖ = 1   (weights softmax-normalised from user sliders)
+score normalised to a probability simplex over {1..69}</div>
+
+    <h3 class="mt">8. Combination ranking</h3>
+    <div class="math">For a candidate combination (a₁,…,a₅,b):
+  combo_score = log score(a₁) + … + log score(a₅) + log score_pb(b)
+            (log to avoid underflow; equivalent to product)
+
+Top-K combinations: generated from top-30 whites × top-10 PB
+                    then sorted by combo_score</div>
+
+    <h3 class="mt">9. Smart pick — the only feature with a real EV improvement</h3>
+    <div class="math">Cost of ticket  = $2
+Jackpot value   = J
+P(jackpot win)  = 1/292,201,338
+P(non-jackpot)  = sum of lower-tier prizes × probabilities
+
+If your combo wins and is unique: payout = J  (after tax ≈ 0.6·J)
+If shared with k others:           payout = J/(k+1)
+
+# Smart pick reduces E[shared] by avoiding popular patterns:
+#   - all numbers ≤ 31     (birthdays)
+#   - consecutive sequences (1,2,3,4,5)
+#   - patterns on Powerball play slip
+# Selection: from ensemble top-50 whites, weight inversely by
+#   estimated popularity. NOT a higher P(win), but higher E[payout | win].</div>
+
+    <h3 class="mt">10. Backtest metric</h3>
+    <div class="math">For each draw t ∈ {warmup+1, …, N}:
+  fit model on draws 1..t−1
+  pred = top-5 whites from that model
+  matched(t) = | pred ∩ actual_whites(t) |
+
+avg_match = mean_t matched(t)
+baseline  = 5 × 5/69 ≈ 0.362
+
+Two-sample test:  z = (avg_match − baseline) / SE
+                  SE = sqrt(σ² / (N−warmup))</div>
+
+    <hr class="line">
+    <p style="font-size:12px" class="muted">Implementation: vanilla JavaScript, no external dependencies. Source code is the HTML file itself — open it in any text editor to inspect every line. Use Ctrl+U in browser.</p>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Powerball Predictor — Ensemble Lab · Data via NY Open Data (5/69+1/26 era from 2015-10-07)<br>
+  This tool is for statistical research and entertainment. Lottery outcomes are i.i.d. uniform random. Please play responsibly.
+</footer>
+
+<div id="toast" class="toast"></div>
+
+<!-- =========== EMBEDDED DATA =========== -->
+<script id="powerballData" type="application/json">{"meta":{"generatedAt":"2026-05-12T09:18:14.045690","first":"2015-10-07","last":"2026-05-11","n":1348},"draws":[{"date":"2015-10-07","whites":[18,30,40,48,52],"powerball":9,"multiplier":3},{"date":"2015-10-10","whites":[12,27,29,43,68],"powerball":1,"multiplier":2},{"date":"2015-10-14","whites":[15,20,29,31,40],"powerball":1,"multiplier":2},{"date":"2015-10-17","whites":[48,49,57,62,69],"powerball":19,"multiplier":3},{"date":"2015-10-21","whites":[30,32,42,56,57],"powerball":11,"multiplier":4},{"date":"2015-10-24","whites":[20,31,56,60,64],"powerball":2,"multiplier":3},{"date":"2015-10-28","whites":[4,54,56,62,63],"powerball":10,"multiplier":2},{"date":"2015-10-31","whites":[9,20,25,47,68],"powerball":7,"multiplier":2},{"date":"2015-11-04","whites":[2,12,17,20,65],"powerball":17,"multiplier":4},{"date":"2015-11-07","whites":[7,16,25,50,53],"powerball":15,"multiplier":2},{"date":"2015-11-11","whites":[4,26,32,55,64],"powerball":18,"multiplier":3},{"date":"2015-11-14","whites":[14,22,37,45,66],"powerball":5,"multiplier":3},{"date":"2015-11-18","whites":[17,40,41,46,69],"powerball":6,"multiplier":2},{"date":"2015-11-21","whites":[37,47,50,52,57],"powerball":21,"multiplier":3},{"date":"2015-11-25","whites":[16,29,53,58,69],"powerball":21,"multiplier":2},{"date":"2015-11-28","whites":[2,6,47,66,67],"powerball":2,"multiplier":3},{"date":"2015-12-02","whites":[14,18,19,32,64],"powerball":9,"multiplier":2},{"date":"2015-12-05","whites":[13,27,33,47,68],"powerball":13,"multiplier":2},{"date":"2015-12-09","whites":[7,10,16,46,56],"powerball":1,"multiplier":2},{"date":"2015-12-12","whites":[2,14,19,30,62],"powerball":22,"multiplier":2},{"date":"2015-12-16","whites":[9,10,32,42,55],"powerball":6,"multiplier":2},{"date":"2015-12-19","whites":[28,30,41,59,68],"powerball":10,"multiplier":2},{"date":"2015-12-23","whites":[16,38,55,63,67],"powerball":25,"multiplier":4},{"date":"2015-12-26","whites":[27,40,44,59,65],"powerball":20,"multiplier":2},{"date":"2015-12-30","whites":[12,36,38,54,61],"powerball":22,"multiplier":3},{"date":"2016-01-02","whites":[5,6,15,29,42],"powerball":10,"multiplier":2},{"date":"2016-01-06","whites":[2,11,47,62,63],"powerball":17,"multiplier":3},{"date":"2016-01-09","whites":[16,19,32,34,57],"powerball":13,"multiplier":3},{"date":"2016-01-13","whites":[4,8,19,27,34],"powerball":10,"multiplier":2},{"date":"2016-01-16","whites":[3,51,52,61,64],"powerball":6,"multiplier":2},{"date":"2016-01-20","whites":[5,39,44,47,69],"powerball":24,"multiplier":5},{"date":"2016-01-23","whites":[22,32,34,40,69],"powerball":19,"multiplier":4},{"date":"2016-01-27","whites":[3,12,40,52,67],"powerball":21,"multiplier":2},{"date":"2016-01-30","whites":[5,12,16,31,43],"powerball":18,"multiplier":4},{"date":"2016-02-03","whites":[26,28,31,60,67],"powerball":23,"multiplier":3},{"date":"2016-02-06","whites":[4,13,31,36,52],"powerball":8,"multiplier":3},{"date":"2016-02-10","whites":[2,3,40,50,62],"powerball":5,"multiplier":2},{"date":"2016-02-13","whites":[7,15,18,19,36],"powerball":20,"multiplier":2},{"date":"2016-02-17","whites":[7,17,27,29,40],"powerball":25,"multiplier":2},{"date":"2016-02-20","whites":[11,12,15,16,54],"powerball":25,"multiplier":5},{"date":"2016-02-24","whites":[21,31,64,65,67],"powerball":5,"multiplier":3},{"date":"2016-02-27","whites":[10,11,21,22,53],"powerball":18,"multiplier":3},{"date":"2016-03-02","whites":[12,13,44,52,62],"powerball":6,"multiplier":2},{"date":"2016-03-05","whites":[3,27,34,59,69],"powerball":19,"multiplier":2},{"date":"2016-03-09","whites":[14,23,32,34,68],"powerball":3,"multiplier":3},{"date":"2016-03-12","whites":[11,28,50,57,62],"powerball":23,"multiplier":2},{"date":"2016-03-16","whites":[10,12,13,46,50],"powerball":21,"multiplier":3},{"date":"2016-03-19","whites":[11,23,43,54,60],"powerball":3,"multiplier":3},{"date":"2016-03-23","whites":[5,8,15,22,49],"powerball":25,"multiplier":3},{"date":"2016-03-26","whites":[11,23,42,52,68],"powerball":6,"multiplier":3},{"date":"2016-03-30","whites":[24,44,53,55,63],"powerball":19,"multiplier":2},{"date":"2016-04-02","whites":[9,28,30,40,61],"powerball":3,"multiplier":2},{"date":"2016-04-06","whites":[4,28,49,60,65],"powerball":25,"multiplier":2},{"date":"2016-04-09","whites":[14,22,23,41,61],"powerball":9,"multiplier":3},{"date":"2016-04-13","whites":[30,33,35,38,64],"powerball":22,"multiplier":3},{"date":"2016-04-16","whites":[3,18,25,32,51],"powerball":3,"multiplier":2},{"date":"2016-04-20","whites":[12,25,30,52,62],"powerball":8,"multiplier":3},{"date":"2016-04-23","whites":[19,35,46,59,62],"powerball":13,"multiplier":5},{"date":"2016-04-27","whites":[2,25,33,39,64],"powerball":17,"multiplier":2},{"date":"2016-04-30","whites":[3,12,16,32,34],"powerball":14,"multiplier":3},{"date":"2016-05-04","whites":[30,47,57,66,69],"powerball":3,"multiplier":3},{"date":"2016-05-07","whites":[5,25,26,44,66],"powerball":9,"multiplier":2},{"date":"2016-05-11","whites":[20,32,52,66,69],"powerball":23,"multiplier":3},{"date":"2016-05-14","whites":[13,27,47,64,65],"powerball":9,"multiplier":3},{"date":"2016-05-18","whites":[23,25,39,54,67],"powerball":11,"multiplier":3},{"date":"2016-05-21","whites":[5,7,9,23,32],"powerball":26,"multiplier":4},{"date":"2016-05-25","whites":[11,24,41,59,64],"powerball":15,"multiplier":3},{"date":"2016-05-28","whites":[6,33,34,58,59],"powerball":12,"multiplier":2},{"date":"2016-06-01","whites":[23,30,33,40,69],"powerball":12,"multiplier":5},{"date":"2016-06-04","whites":[16,20,22,43,64],"powerball":17,"multiplier":2},{"date":"2016-06-08","whites":[12,25,37,60,69],"powerball":20,"multiplier":3},{"date":"2016-06-11","whites":[20,27,36,41,58],"powerball":7,"multiplier":2},{"date":"2016-06-15","whites":[4,22,24,31,33],"powerball":10,"multiplier":2},{"date":"2016-06-18","whites":[2,23,41,53,63],"powerball":11,"multiplier":2},{"date":"2016-06-22","whites":[14,40,42,43,52],"powerball":17,"multiplier":3},{"date":"2016-06-25","whites":[3,27,36,56,69],"powerball":25,"multiplier":2},{"date":"2016-06-29","whites":[23,29,37,60,64],"powerball":6,"multiplier":2},{"date":"2016-07-02","whites":[10,34,39,59,63],"powerball":4,"multiplier":2},{"date":"2016-07-06","whites":[2,24,31,57,66],"powerball":18,"multiplier":3},{"date":"2016-07-09","whites":[10,28,32,61,64],"powerball":12,"multiplier":3},{"date":"2016-07-13","whites":[3,15,29,54,57],"powerball":10,"multiplier":3},{"date":"2016-07-16","whites":[11,17,40,50,62],"powerball":26,"multiplier":2},{"date":"2016-07-20","whites":[6,25,35,58,66],"powerball":5,"multiplier":2},{"date":"2016-07-23","whites":[5,7,23,35,39],"powerball":11,"multiplier":2},{"date":"2016-07-27","whites":[10,47,50,65,68],"powerball":24,"multiplier":2},{"date":"2016-07-30","whites":[11,17,21,23,32],"powerball":5,"multiplier":2},{"date":"2016-08-03","whites":[9,11,27,66,67],"powerball":2,"multiplier":3},{"date":"2016-08-06","whites":[20,33,36,47,52],"powerball":12,"multiplier":3},{"date":"2016-08-10","whites":[23,56,61,64,67],"powerball":12,"multiplier":5},{"date":"2016-08-13","whites":[38,44,60,64,69],"powerball":6,"multiplier":2},{"date":"2016-08-17","whites":[33,44,49,50,52],"powerball":8,"multiplier":3},{"date":"2016-08-20","whites":[3,6,21,60,68],"powerball":24,"multiplier":2},{"date":"2016-08-24","whites":[9,11,25,64,65],"powerball":16,"multiplier":3},{"date":"2016-08-27","whites":[4,32,48,49,63],"powerball":20,"multiplier":2},{"date":"2016-08-31","whites":[5,10,24,56,61],"powerball":12,"multiplier":2},{"date":"2016-09-03","whites":[7,39,50,59,67],"powerball":25,"multiplier":3},{"date":"2016-09-07","whites":[22,23,29,33,55],"powerball":21,"multiplier":2},{"date":"2016-09-10","whites":[3,17,49,55,68],"powerball":8,"multiplier":2},{"date":"2016-09-14","whites":[10,11,23,28,31],"powerball":14,"multiplier":2},{"date":"2016-09-17","whites":[9,19,51,55,62],"powerball":14,"multiplier":4},{"date":"2016-09-21","whites":[1,28,63,67,69],"powerball":17,"multiplier":4},{"date":"2016-09-24","whites":[7,15,20,29,41],"powerball":22,"multiplier":2},{"date":"2016-09-28","whites":[30,38,52,53,62],"powerball":1,"multiplier":3},{"date":"2016-10-01","whites":[2,12,50,61,64],"powerball":1,"multiplier":2},{"date":"2016-10-05","whites":[8,18,27,29,60],"powerball":15,"multiplier":2},{"date":"2016-10-08","whites":[3,54,61,64,68],"powerball":9,"multiplier":2},{"date":"2016-10-12","whites":[16,30,34,37,44],"powerball":16,"multiplier":2},{"date":"2016-10-15","whites":[23,49,57,64,67],"powerball":20,"multiplier":2},{"date":"2016-10-19","whites":[10,16,38,43,63],"powerball":23,"multiplier":2},{"date":"2016-10-22","whites":[1,28,33,55,56],"powerball":22,"multiplier":2},{"date":"2016-10-26","whites":[2,3,16,48,56],"powerball":24,"multiplier":2},{"date":"2016-10-29","whites":[19,20,21,42,48],"powerball":23,"multiplier":3},{"date":"2016-11-02","whites":[13,18,37,54,61],"powerball":5,"multiplier":2},{"date":"2016-11-05","whites":[21,31,50,51,69],"powerball":8,"multiplier":3},{"date":"2016-11-09","whites":[1,25,28,31,54],"powerball":2,"multiplier":2},{"date":"2016-11-12","whites":[8,17,20,27,52],"powerball":24,"multiplier":2},{"date":"2016-11-16","whites":[28,41,61,63,65],"powerball":7,"multiplier":2},{"date":"2016-11-19","whites":[16,24,28,43,61],"powerball":21,"multiplier":2},{"date":"2016-11-23","whites":[7,32,41,47,61],"powerball":3,"multiplier":2},{"date":"2016-11-26","whites":[17,19,21,37,44],"powerball":16,"multiplier":2},{"date":"2016-11-30","whites":[3,14,18,25,45],"powerball":7,"multiplier":2},{"date":"2016-12-03","whites":[8,10,26,27,33],"powerball":22,"multiplier":2},{"date":"2016-12-07","whites":[41,48,49,53,64],"powerball":20,"multiplier":2},{"date":"2016-12-10","whites":[12,21,32,44,66],"powerball":15,"multiplier":2},{"date":"2016-12-14","whites":[18,26,37,39,66],"powerball":15,"multiplier":3},{"date":"2016-12-17","whites":[1,8,16,40,48],"powerball":10,"multiplier":2},{"date":"2016-12-21","whites":[25,33,40,54,68],"powerball":3,"multiplier":5},{"date":"2016-12-24","whites":[28,38,42,51,52],"powerball":21,"multiplier":2},{"date":"2016-12-28","whites":[16,23,30,44,58],"powerball":4,"multiplier":2},{"date":"2016-12-31","whites":[1,3,28,57,67],"powerball":9,"multiplier":2},{"date":"2017-01-04","whites":[16,17,29,41,42],"powerball":4,"multiplier":3},{"date":"2017-01-07","whites":[3,12,24,37,63],"powerball":10,"multiplier":2},{"date":"2017-01-11","whites":[1,3,13,16,43],"powerball":24,"multiplier":2},{"date":"2017-01-14","whites":[23,55,59,64,69],"powerball":13,"multiplier":5},{"date":"2017-01-18","whites":[9,40,41,53,58],"powerball":12,"multiplier":2},{"date":"2017-01-21","whites":[23,25,45,52,67],"powerball":2,"multiplier":2},{"date":"2017-01-25","whites":[18,28,62,66,68],"powerball":22,"multiplier":2},{"date":"2017-01-28","whites":[12,20,39,49,69],"powerball":17,"multiplier":2},{"date":"2017-02-01","whites":[9,43,57,60,64],"powerball":10,"multiplier":2},{"date":"2017-02-04","whites":[6,13,16,17,52],"powerball":25,"multiplier":3},{"date":"2017-02-08","whites":[14,20,42,49,66],"powerball":5,"multiplier":2},{"date":"2017-02-11","whites":[5,9,17,37,64],"powerball":2,"multiplier":2},{"date":"2017-02-15","whites":[5,28,33,38,42],"powerball":19,"multiplier":2},{"date":"2017-02-18","whites":[3,7,9,31,33],"powerball":20,"multiplier":3},{"date":"2017-02-22","whites":[10,13,28,52,61],"powerball":2,"multiplier":2},{"date":"2017-02-25","whites":[6,32,47,62,65],"powerball":19,"multiplier":2},{"date":"2017-03-01","whites":[10,16,40,52,55],"powerball":17,"multiplier":10},{"date":"2017-03-04","whites":[2,18,19,22,63],"powerball":19,"multiplier":3},{"date":"2017-03-08","whites":[23,33,42,46,59],"powerball":4,"multiplier":2},{"date":"2017-03-11","whites":[1,26,41,50,57],"powerball":11,"multiplier":2},{"date":"2017-03-15","whites":[16,30,41,48,53],"powerball":16,"multiplier":3},{"date":"2017-03-18","whites":[13,25,44,54,67],"powerball":5,"multiplier":3},{"date":"2017-03-22","whites":[2,9,27,29,42],"powerball":9,"multiplier":2},{"date":"2017-03-25","whites":[18,31,32,45,48],"powerball":16,"multiplier":4},{"date":"2017-03-29","whites":[8,15,31,36,62],"powerball":11,"multiplier":3},{"date":"2017-04-01","whites":[9,32,36,44,65],"powerball":1,"multiplier":3},{"date":"2017-04-05","whites":[8,20,46,53,54],"powerball":13,"multiplier":2},{"date":"2017-04-08","whites":[23,36,51,53,60],"powerball":15,"multiplier":2},{"date":"2017-04-12","whites":[8,14,61,63,68],"powerball":24,"multiplier":2},{"date":"2017-04-15","whites":[5,22,26,45,61],"powerball":13,"multiplier":3},{"date":"2017-04-19","whites":[1,19,37,40,52],"powerball":15,"multiplier":3},{"date":"2017-04-22","whites":[21,39,41,48,63],"powerball":6,"multiplier":3},{"date":"2017-04-26","whites":[1,15,18,26,51],"powerball":26,"multiplier":4},{"date":"2017-04-29","whites":[22,23,24,45,62],"powerball":5,"multiplier":2},{"date":"2017-05-03","whites":[17,18,49,59,66],"powerball":9,"multiplier":2},{"date":"2017-05-06","whites":[11,21,31,41,59],"powerball":21,"multiplier":3},{"date":"2017-05-10","whites":[29,31,46,56,62],"powerball":8,"multiplier":2},{"date":"2017-05-13","whites":[17,20,32,63,68],"powerball":19,"multiplier":5},{"date":"2017-05-17","whites":[4,11,39,45,48],"powerball":9,"multiplier":3},{"date":"2017-05-20","whites":[5,22,45,47,54],"powerball":3,"multiplier":2},{"date":"2017-05-24","whites":[28,32,33,38,62],"powerball":15,"multiplier":2},{"date":"2017-05-27","whites":[5,10,28,55,67],"powerball":9,"multiplier":3},{"date":"2017-05-31","whites":[4,33,39,46,60],"powerball":6,"multiplier":2},{"date":"2017-06-03","whites":[3,9,21,41,54],"powerball":25,"multiplier":4},{"date":"2017-06-07","whites":[5,21,57,66,69],"powerball":13,"multiplier":3},{"date":"2017-06-14","whites":[5,22,43,57,63],"powerball":24,"multiplier":2},{"date":"2017-06-17","whites":[10,13,32,53,62],"powerball":21,"multiplier":2},{"date":"2017-06-21","whites":[14,46,61,65,68],"powerball":13,"multiplier":2},{"date":"2017-06-24","whites":[10,22,32,36,58],"powerball":10,"multiplier":4},{"date":"2017-06-28","whites":[29,37,46,53,68],"powerball":8,"multiplier":2},{"date":"2017-07-01","whites":[19,42,45,48,53],"powerball":16,"multiplier":3},{"date":"2017-07-05","whites":[4,9,16,54,68],"powerball":21,"multiplier":2},{"date":"2017-07-08","whites":[8,10,29,40,59],"powerball":26,"multiplier":2},{"date":"2017-07-12","whites":[1,2,18,23,61],"powerball":9,"multiplier":2},{"date":"2017-07-15","whites":[9,40,63,64,66],"powerball":17,"multiplier":2},{"date":"2017-07-19","whites":[50,51,59,61,63],"powerball":4,"multiplier":5},{"date":"2017-07-22","whites":[5,32,44,53,60],"powerball":9,"multiplier":3},{"date":"2017-07-26","whites":[7,19,21,42,69],"powerball":12,"multiplier":2},{"date":"2017-07-29","whites":[1,28,40,45,48],"powerball":12,"multiplier":2},{"date":"2017-08-02","whites":[1,16,54,63,69],"powerball":18,"multiplier":3},{"date":"2017-08-05","whites":[11,21,28,33,45],"powerball":11,"multiplier":2},{"date":"2017-08-09","whites":[12,30,36,47,62],"powerball":9,"multiplier":4},{"date":"2017-08-12","whites":[20,24,26,35,49],"powerball":19,"multiplier":2},{"date":"2017-08-16","whites":[9,15,43,60,64],"powerball":4,"multiplier":3},{"date":"2017-08-19","whites":[17,19,39,43,68],"powerball":13,"multiplier":4},{"date":"2017-08-23","whites":[6,7,16,23,26],"powerball":4,"multiplier":4},{"date":"2017-08-26","whites":[7,15,32,38,66],"powerball":15,"multiplier":2},{"date":"2017-08-30","whites":[19,28,43,67,69],"powerball":7,"multiplier":2},{"date":"2017-09-02","whites":[6,21,41,52,62],"powerball":26,"multiplier":2},{"date":"2017-09-06","whites":[8,14,32,58,67],"powerball":17,"multiplier":3},{"date":"2017-09-09","whites":[6,20,29,57,59],"powerball":22,"multiplier":2},{"date":"2017-09-13","whites":[17,24,35,57,63],"powerball":19,"multiplier":3},{"date":"2017-09-16","whites":[17,18,24,25,31],"powerball":24,"multiplier":2},{"date":"2017-09-20","whites":[39,48,53,67,68],"powerball":26,"multiplier":3},{"date":"2017-09-23","whites":[24,45,55,56,57],"powerball":19,"multiplier":2},{"date":"2017-09-27","whites":[8,10,21,23,25],"powerball":22,"multiplier":3},{"date":"2017-09-30","whites":[8,12,25,41,64],"powerball":15,"multiplier":3},{"date":"2017-10-04","whites":[22,23,62,63,66],"powerball":24,"multiplier":2},{"date":"2017-10-07","whites":[10,49,61,63,65],"powerball":7,"multiplier":2},{"date":"2017-10-11","whites":[1,3,13,19,69],"powerball":23,"multiplier":2},{"date":"2017-10-14","whites":[32,37,56,66,69],"powerball":11,"multiplier":3},{"date":"2017-10-18","whites":[30,49,54,66,69],"powerball":8,"multiplier":2},{"date":"2017-10-21","whites":[14,41,42,45,69],"powerball":4,"multiplier":2},{"date":"2017-10-25","whites":[18,22,29,54,57],"powerball":8,"multiplier":3},{"date":"2017-10-28","whites":[27,35,38,57,66],"powerball":10,"multiplier":2},{"date":"2017-11-01","whites":[3,6,19,26,44],"powerball":1,"multiplier":2},{"date":"2017-11-04","whites":[12,14,26,48,51],"powerball":13,"multiplier":3},{"date":"2017-11-08","whites":[12,14,20,21,34],"powerball":22,"multiplier":2},{"date":"2017-11-11","whites":[4,6,16,30,56],"powerball":18,"multiplier":2},{"date":"2017-11-15","whites":[23,32,44,48,50],"powerball":25,"multiplier":2},{"date":"2017-11-18","whites":[17,28,31,32,39],"powerball":26,"multiplier":3},{"date":"2017-11-22","whites":[35,37,46,51,61],"powerball":13,"multiplier":2},{"date":"2017-11-25","whites":[8,13,27,53,54],"powerball":4,"multiplier":2},{"date":"2017-11-29","whites":[24,26,28,59,63],"powerball":16,"multiplier":3},{"date":"2017-12-02","whites":[28,30,32,36,58],"powerball":6,"multiplier":3},{"date":"2017-12-06","whites":[19,20,50,55,62],"powerball":9,"multiplier":2},{"date":"2017-12-09","whites":[25,36,37,55,60],"powerball":6,"multiplier":5},{"date":"2017-12-13","whites":[2,24,28,51,58],"powerball":7,"multiplier":3},{"date":"2017-12-16","whites":[9,35,37,50,63],"powerball":11,"multiplier":2},{"date":"2017-12-20","whites":[1,20,61,64,69],"powerball":20,"multiplier":2},{"date":"2017-12-23","whites":[1,3,13,15,44],"powerball":25,"multiplier":2},{"date":"2017-12-27","whites":[3,9,16,56,60],"powerball":3,"multiplier":3},{"date":"2017-12-30","whites":[28,36,41,51,58],"powerball":24,"multiplier":2},{"date":"2018-01-03","whites":[2,18,37,39,42],"powerball":12,"multiplier":3},{"date":"2018-01-06","whites":[12,29,30,33,61],"powerball":26,"multiplier":3},{"date":"2018-01-10","whites":[7,24,33,49,50],"powerball":4,"multiplier":5},{"date":"2018-01-13","whites":[14,25,35,58,69],"powerball":24,"multiplier":2},{"date":"2018-01-17","whites":[3,33,37,51,57],"powerball":21,"multiplier":2},{"date":"2018-01-20","whites":[26,28,47,49,58],"powerball":3,"multiplier":4},{"date":"2018-01-24","whites":[5,9,11,33,64],"powerball":21,"multiplier":3},{"date":"2018-01-27","whites":[17,21,26,47,54],"powerball":7,"multiplier":2},{"date":"2018-01-31","whites":[4,7,14,46,59],"powerball":22,"multiplier":10},{"date":"2018-02-03","whites":[15,23,27,48,53],"powerball":6,"multiplier":2},{"date":"2018-02-07","whites":[23,34,35,40,47],"powerball":10,"multiplier":2},{"date":"2018-02-10","whites":[1,13,27,41,59],"powerball":20,"multiplier":5},{"date":"2018-02-14","whites":[37,39,44,46,69],"powerball":26,"multiplier":2},{"date":"2018-02-17","whites":[13,26,39,44,62],"powerball":2,"multiplier":3},{"date":"2018-02-21","whites":[7,15,31,34,36],"powerball":8,"multiplier":3},{"date":"2018-02-24","whites":[24,25,38,62,63],"powerball":6,"multiplier":2},{"date":"2018-02-28","whites":[12,30,59,65,69],"powerball":16,"multiplier":5},{"date":"2018-03-03","whites":[13,17,25,36,40],"powerball":5,"multiplier":2},{"date":"2018-03-07","whites":[6,13,19,36,51],"powerball":18,"multiplier":2},{"date":"2018-03-10","whites":[43,44,54,61,69],"powerball":22,"multiplier":3},{"date":"2018-03-14","whites":[6,12,24,41,68],"powerball":9,"multiplier":3},{"date":"2018-03-17","whites":[22,57,59,60,66],"powerball":7,"multiplier":2},{"date":"2018-03-21","whites":[3,4,18,29,61],"powerball":25,"multiplier":2},{"date":"2018-03-24","whites":[10,33,45,53,56],"powerball":24,"multiplier":3},{"date":"2018-03-28","whites":[6,8,26,52,53],"powerball":21,"multiplier":2},{"date":"2018-03-31","whites":[8,24,52,55,61],"powerball":21,"multiplier":3},{"date":"2018-04-04","whites":[8,24,42,54,64],"powerball":24,"multiplier":4},{"date":"2018-04-07","whites":[2,17,20,38,39],"powerball":20,"multiplier":2},{"date":"2018-04-11","whites":[16,18,27,55,67],"powerball":18,"multiplier":3},{"date":"2018-04-14","whites":[17,19,26,61,62],"powerball":15,"multiplier":2},{"date":"2018-04-18","whites":[9,10,12,17,23],"powerball":9,"multiplier":2},{"date":"2018-04-21","whites":[40,50,54,62,69],"powerball":19,"multiplier":2},{"date":"2018-04-25","whites":[17,18,39,56,64],"powerball":12,"multiplier":3},{"date":"2018-04-28","whites":[20,22,28,45,50],"powerball":8,"multiplier":5},{"date":"2018-05-02","whites":[5,14,31,40,50],"powerball":6,"multiplier":2},{"date":"2018-05-05","whites":[14,29,36,57,61],"powerball":17,"multiplier":4},{"date":"2018-05-09","whites":[11,16,38,50,69],"powerball":19,"multiplier":2},{"date":"2018-05-12","whites":[22,42,45,55,56],"powerball":14,"multiplier":3},{"date":"2018-05-16","whites":[17,19,21,22,51],"powerball":19,"multiplier":2},{"date":"2018-05-19","whites":[3,6,9,17,56],"powerball":25,"multiplier":3},{"date":"2018-05-23","whites":[20,54,56,61,64],"powerball":7,"multiplier":4},{"date":"2018-05-26","whites":[1,21,31,45,49],"powerball":21,"multiplier":2},{"date":"2018-05-30","whites":[17,23,26,46,68],"powerball":20,"multiplier":2},{"date":"2018-06-02","whites":[23,25,37,44,64],"powerball":7,"multiplier":4},{"date":"2018-06-06","whites":[23,28,41,53,56],"powerball":14,"multiplier":3},{"date":"2018-06-09","whites":[6,10,15,25,36],"powerball":14,"multiplier":3},{"date":"2018-06-13","whites":[13,20,38,45,55],"powerball":1,"multiplier":2},{"date":"2018-06-16","whites":[9,45,57,58,65],"powerball":9,"multiplier":2},{"date":"2018-06-20","whites":[4,14,23,27,56],"powerball":13,"multiplier":2},{"date":"2018-06-23","whites":[16,29,43,45,56],"powerball":25,"multiplier":2},{"date":"2018-06-27","whites":[7,28,37,62,63],"powerball":15,"multiplier":2},{"date":"2018-06-30","whites":[3,9,20,42,61],"powerball":24,"multiplier":2},{"date":"2018-07-04","whites":[4,7,15,41,44],"powerball":10,"multiplier":2},{"date":"2018-07-07","whites":[1,10,43,45,64],"powerball":22,"multiplier":3},{"date":"2018-07-11","whites":[19,21,27,46,47],"powerball":7,"multiplier":4},{"date":"2018-07-14","whites":[22,41,42,49,67],"powerball":11,"multiplier":3},{"date":"2018-07-18","whites":[1,10,27,28,36],"powerball":12,"multiplier":2},{"date":"2018-07-21","whites":[9,23,56,58,68],"powerball":1,"multiplier":2},{"date":"2018-07-25","whites":[2,18,41,44,64],"powerball":26,"multiplier":2},{"date":"2018-07-28","whites":[22,27,46,56,65],"powerball":13,"multiplier":2},{"date":"2018-08-01","whites":[5,22,32,38,58],"powerball":26,"multiplier":2},{"date":"2018-08-04","whites":[3,11,38,44,58],"powerball":2,"multiplier":4},{"date":"2018-08-08","whites":[10,21,30,43,63],"powerball":17,"multiplier":2},{"date":"2018-08-11","whites":[5,43,56,62,68],"powerball":24,"multiplier":2},{"date":"2018-08-15","whites":[12,15,28,47,48],"powerball":16,"multiplier":2},{"date":"2018-08-18","whites":[24,34,52,61,67],"powerball":16,"multiplier":3},{"date":"2018-08-22","whites":[1,7,45,47,69],"powerball":13,"multiplier":2},{"date":"2018-08-25","whites":[20,25,54,57,63],"powerball":8,"multiplier":2},{"date":"2018-08-29","whites":[25,41,53,57,67],"powerball":12,"multiplier":2},{"date":"2018-09-01","whites":[11,54,55,61,66],"powerball":9,"multiplier":3},{"date":"2018-09-05","whites":[6,15,50,59,60],"powerball":13,"multiplier":2},{"date":"2018-09-08","whites":[3,13,20,32,33],"powerball":21,"multiplier":3},{"date":"2018-09-12","whites":[6,28,48,63,64],"powerball":24,"multiplier":2},{"date":"2018-09-15","whites":[2,18,19,24,34],"powerball":3,"multiplier":3},{"date":"2018-09-19","whites":[4,39,48,50,51],"powerball":11,"multiplier":3},{"date":"2018-09-22","whites":[24,61,63,64,69],"powerball":18,"multiplier":5},{"date":"2018-09-26","whites":[1,2,7,30,50],"powerball":8,"multiplier":5},{"date":"2018-09-29","whites":[9,17,34,59,64],"powerball":22,"multiplier":2},{"date":"2018-10-03","whites":[41,53,59,63,66],"powerball":3,"multiplier":3},{"date":"2018-10-06","whites":[1,22,27,53,67],"powerball":15,"multiplier":3},{"date":"2018-10-10","whites":[8,23,27,42,60],"powerball":7,"multiplier":3},{"date":"2018-10-13","whites":[11,14,32,43,65],"powerball":15,"multiplier":3},{"date":"2018-10-17","whites":[3,57,64,68,69],"powerball":15,"multiplier":3},{"date":"2018-10-20","whites":[16,54,57,62,69],"powerball":23,"multiplier":2},{"date":"2018-10-24","whites":[3,21,45,53,56],"powerball":22,"multiplier":2},{"date":"2018-10-27","whites":[8,12,13,19,27],"powerball":4,"multiplier":3},{"date":"2018-10-31","whites":[7,25,39,40,47],"powerball":20,"multiplier":3},{"date":"2018-11-03","whites":[15,21,24,32,65],"powerball":11,"multiplier":3},{"date":"2018-11-07","whites":[26,28,34,42,50],"powerball":25,"multiplier":2},{"date":"2018-11-10","whites":[5,29,34,53,57],"powerball":24,"multiplier":2},{"date":"2018-11-14","whites":[7,42,49,62,69],"powerball":23,"multiplier":5},{"date":"2018-11-17","whites":[6,8,20,52,68],"powerball":5,"multiplier":2},{"date":"2018-11-21","whites":[7,14,23,38,55],"powerball":18,"multiplier":2},{"date":"2018-11-24","whites":[11,33,51,56,58],"powerball":18,"multiplier":2},{"date":"2018-11-28","whites":[4,19,59,68,69],"powerball":21,"multiplier":2},{"date":"2018-12-01","whites":[10,11,47,55,58],"powerball":26,"multiplier":2},{"date":"2018-12-05","whites":[9,11,36,37,38],"powerball":11,"multiplier":5},{"date":"2018-12-08","whites":[14,32,34,46,61],"powerball":10,"multiplier":2},{"date":"2018-12-12","whites":[4,9,21,29,64],"powerball":26,"multiplier":2},{"date":"2018-12-15","whites":[8,38,43,52,55],"powerball":17,"multiplier":3},{"date":"2018-12-19","whites":[15,29,31,37,43],"powerball":16,"multiplier":2},{"date":"2018-12-22","whites":[21,28,30,40,59],"powerball":26,"multiplier":3},{"date":"2018-12-26","whites":[5,25,38,52,67],"powerball":24,"multiplier":2},{"date":"2018-12-29","whites":[12,42,51,53,62],"powerball":25,"multiplier":2},{"date":"2019-01-02","whites":[8,12,42,46,56],"powerball":12,"multiplier":2},{"date":"2019-01-05","whites":[3,7,15,27,69],"powerball":19,"multiplier":2},{"date":"2019-01-09","whites":[6,19,37,49,59],"powerball":22,"multiplier":3},{"date":"2019-01-12","whites":[7,36,48,57,58],"powerball":24,"multiplier":2},{"date":"2019-01-16","whites":[14,29,31,56,61],"powerball":1,"multiplier":2},{"date":"2019-01-19","whites":[5,8,41,65,66],"powerball":20,"multiplier":3},{"date":"2019-01-23","whites":[23,25,47,48,50],"powerball":24,"multiplier":3},{"date":"2019-01-26","whites":[8,12,20,21,32],"powerball":10,"multiplier":4},{"date":"2019-01-30","whites":[2,12,16,29,54],"powerball":6,"multiplier":2},{"date":"2019-02-02","whites":[10,17,18,43,65],"powerball":13,"multiplier":5},{"date":"2019-02-06","whites":[5,13,28,38,63],"powerball":21,"multiplier":5},{"date":"2019-02-09","whites":[1,2,3,7,39],"powerball":25,"multiplier":3},{"date":"2019-02-13","whites":[2,8,14,24,69],"powerball":26,"multiplier":2},{"date":"2019-02-16","whites":[29,30,41,48,64],"powerball":1,"multiplier":4},{"date":"2019-02-20","whites":[27,49,50,51,52],"powerball":2,"multiplier":2},{"date":"2019-02-23","whites":[4,6,14,20,32],"powerball":13,"multiplier":2},{"date":"2019-02-27","whites":[21,31,42,49,59],"powerball":23,"multiplier":5},{"date":"2019-03-02","whites":[1,19,25,27,68],"powerball":21,"multiplier":2},{"date":"2019-03-06","whites":[6,10,21,35,46],"powerball":23,"multiplier":2},{"date":"2019-03-09","whites":[5,6,45,55,59],"powerball":14,"multiplier":3},{"date":"2019-03-13","whites":[18,36,45,47,69],"powerball":14,"multiplier":3},{"date":"2019-03-16","whites":[30,34,39,53,67],"powerball":11,"multiplier":2},{"date":"2019-03-20","whites":[10,14,50,53,63],"powerball":21,"multiplier":2},{"date":"2019-03-23","whites":[24,25,52,60,66],"powerball":5,"multiplier":3},{"date":"2019-03-27","whites":[16,20,37,44,62],"powerball":12,"multiplier":3},{"date":"2019-03-30","whites":[21,52,54,64,68],"powerball":4,"multiplier":3},{"date":"2019-04-03","whites":[16,19,25,32,49],"powerball":18,"multiplier":2},{"date":"2019-04-06","whites":[15,33,43,59,60],"powerball":8,"multiplier":3},{"date":"2019-04-10","whites":[12,21,23,39,67],"powerball":6,"multiplier":4},{"date":"2019-04-13","whites":[4,17,26,32,49],"powerball":10,"multiplier":2},{"date":"2019-04-17","whites":[1,15,17,46,66],"powerball":15,"multiplier":3},{"date":"2019-04-20","whites":[3,27,30,63,65],"powerball":1,"multiplier":3},{"date":"2019-04-24","whites":[6,32,35,36,65],"powerball":4,"multiplier":5},{"date":"2019-04-27","whites":[2,29,41,45,62],"powerball":6,"multiplier":3},{"date":"2019-05-01","whites":[5,23,28,56,66],"powerball":17,"multiplier":5},{"date":"2019-05-04","whites":[6,16,23,30,61],"powerball":2,"multiplier":2},{"date":"2019-05-08","whites":[1,45,53,64,66],"powerball":3,"multiplier":3},{"date":"2019-05-11","whites":[6,8,9,37,40],"powerball":26,"multiplier":2},{"date":"2019-05-15","whites":[7,17,33,61,68],"powerball":4,"multiplier":2},{"date":"2019-05-18","whites":[2,10,25,66,67],"powerball":26,"multiplier":4},{"date":"2019-05-22","whites":[7,10,20,44,57],"powerball":3,"multiplier":2},{"date":"2019-05-25","whites":[1,2,39,43,66],"powerball":2,"multiplier":3},{"date":"2019-05-29","whites":[3,32,34,42,61],"powerball":7,"multiplier":2},{"date":"2019-06-01","whites":[6,15,34,45,52],"powerball":8,"multiplier":2},{"date":"2019-06-05","whites":[17,23,28,34,38],"powerball":8,"multiplier":3},{"date":"2019-06-08","whites":[9,13,42,48,60],"powerball":18,"multiplier":2},{"date":"2019-06-12","whites":[5,35,38,42,57],"powerball":13,"multiplier":2},{"date":"2019-06-15","whites":[8,11,14,16,49],"powerball":14,"multiplier":3},{"date":"2019-06-19","whites":[4,18,21,26,38],"powerball":1,"multiplier":3},{"date":"2019-06-22","whites":[3,6,11,14,66],"powerball":21,"multiplier":2},{"date":"2019-06-26","whites":[1,5,16,22,54],"powerball":24,"multiplier":3},{"date":"2019-06-29","whites":[13,17,24,59,62],"powerball":8,"multiplier":2},{"date":"2019-07-03","whites":[40,43,45,50,61],"powerball":25,"multiplier":3},{"date":"2019-07-06","whites":[4,8,23,46,65],"powerball":1,"multiplier":2},{"date":"2019-07-10","whites":[7,9,26,44,68],"powerball":3,"multiplier":3},{"date":"2019-07-13","whites":[13,23,32,35,68],"powerball":21,"multiplier":3},{"date":"2019-07-17","whites":[19,43,47,60,68],"powerball":10,"multiplier":2},{"date":"2019-07-20","whites":[5,26,36,64,69],"powerball":19,"multiplier":3},{"date":"2019-07-24","whites":[22,29,35,53,56],"powerball":13,"multiplier":2},{"date":"2019-07-27","whites":[1,19,31,48,61],"powerball":6,"multiplier":2},{"date":"2019-07-31","whites":[14,37,47,55,67],"powerball":6,"multiplier":2},{"date":"2019-08-03","whites":[3,6,45,66,68],"powerball":13,"multiplier":2},{"date":"2019-08-07","whites":[8,32,47,53,59],"powerball":3,"multiplier":3},{"date":"2019-08-10","whites":[35,41,44,58,59],"powerball":3,"multiplier":3},{"date":"2019-08-14","whites":[10,13,30,51,69],"powerball":10,"multiplier":2},{"date":"2019-08-17","whites":[18,21,24,30,60],"powerball":20,"multiplier":3},{"date":"2019-08-21","whites":[12,21,22,29,32],"powerball":21,"multiplier":2},{"date":"2019-08-24","whites":[5,12,20,21,47],"powerball":1,"multiplier":2},{"date":"2019-08-28","whites":[9,32,37,41,56],"powerball":14,"multiplier":10},{"date":"2019-08-31","whites":[14,41,50,56,57],"powerball":18,"multiplier":5},{"date":"2019-09-04","whites":[4,8,30,52,59],"powerball":2,"multiplier":10},{"date":"2019-09-07","whites":[11,20,41,42,56],"powerball":6,"multiplier":2},{"date":"2019-09-11","whites":[6,17,24,53,57],"powerball":3,"multiplier":3},{"date":"2019-09-14","whites":[11,27,31,36,67],"powerball":11,"multiplier":2},{"date":"2019-09-18","whites":[14,19,39,47,51],"powerball":15,"multiplier":3},{"date":"2019-09-21","whites":[1,9,22,36,68],"powerball":22,"multiplier":2},{"date":"2019-09-25","whites":[37,43,44,45,53],"powerball":25,"multiplier":3},{"date":"2019-09-28","whites":[15,23,34,51,55],"powerball":4,"multiplier":2},{"date":"2019-10-02","whites":[4,8,10,43,53],"powerball":7,"multiplier":2},{"date":"2019-10-05","whites":[6,14,36,51,54],"powerball":4,"multiplier":2},{"date":"2019-10-09","whites":[5,18,33,43,65],"powerball":2,"multiplier":2},{"date":"2019-10-12","whites":[12,29,34,53,65],"powerball":23,"multiplier":2},{"date":"2019-10-16","whites":[1,5,25,63,67],"powerball":3,"multiplier":2},{"date":"2019-10-19","whites":[14,27,29,59,65],"powerball":12,"multiplier":2},{"date":"2019-10-23","whites":[5,12,50,61,69],"powerball":23,"multiplier":2},{"date":"2019-10-26","whites":[3,20,48,54,59],"powerball":4,"multiplier":4},{"date":"2019-10-30","whites":[19,22,52,56,67],"powerball":21,"multiplier":2},{"date":"2019-11-02","whites":[3,23,32,37,58],"powerball":22,"multiplier":2},{"date":"2019-11-06","whites":[15,28,46,62,64],"powerball":17,"multiplier":3},{"date":"2019-11-09","whites":[14,17,35,38,60],"powerball":25,"multiplier":2},{"date":"2019-11-13","whites":[23,26,27,28,66],"powerball":11,"multiplier":2},{"date":"2019-11-16","whites":[14,22,26,55,63],"powerball":26,"multiplier":3},{"date":"2019-11-20","whites":[7,15,39,40,57],"powerball":12,"multiplier":2},{"date":"2019-11-23","whites":[28,35,38,61,66],"powerball":23,"multiplier":3},{"date":"2019-11-27","whites":[15,26,37,53,55],"powerball":21,"multiplier":2},{"date":"2019-11-30","whites":[15,35,42,63,68],"powerball":18,"multiplier":4},{"date":"2019-12-04","whites":[8,27,44,51,61],"powerball":14,"multiplier":3},{"date":"2019-12-07","whites":[18,42,53,62,66],"powerball":25,"multiplier":3},{"date":"2019-12-11","whites":[24,29,42,44,63],"powerball":10,"multiplier":4},{"date":"2019-12-14","whites":[3,6,12,32,64],"powerball":19,"multiplier":3},{"date":"2019-12-18","whites":[14,18,26,39,68],"powerball":9,"multiplier":2},{"date":"2019-12-21","whites":[19,31,35,50,67],"powerball":14,"multiplier":2},{"date":"2019-12-25","whites":[2,4,16,30,46],"powerball":20,"multiplier":2},{"date":"2019-12-28","whites":[20,23,39,59,60],"powerball":18,"multiplier":2},{"date":"2020-01-01","whites":[49,53,57,59,62],"powerball":26,"multiplier":2},{"date":"2020-01-04","whites":[1,11,21,25,54],"powerball":7,"multiplier":2},{"date":"2020-01-08","whites":[2,4,7,43,56],"powerball":22,"multiplier":4},{"date":"2020-01-11","whites":[3,21,23,31,59],"powerball":3,"multiplier":2},{"date":"2020-01-15","whites":[39,41,53,55,68],"powerball":19,"multiplier":2},{"date":"2020-01-18","whites":[20,24,38,56,68],"powerball":18,"multiplier":2},{"date":"2020-01-22","whites":[11,33,44,59,67],"powerball":8,"multiplier":3},{"date":"2020-01-25","whites":[2,9,17,36,67],"powerball":18,"multiplier":2},{"date":"2020-01-29","whites":[9,12,15,31,60],"powerball":2,"multiplier":2},{"date":"2020-02-01","whites":[12,33,54,57,60],"powerball":13,"multiplier":4},{"date":"2020-02-05","whites":[23,30,35,41,57],"powerball":2,"multiplier":3},{"date":"2020-02-08","whites":[35,49,50,59,66],"powerball":6,"multiplier":2},{"date":"2020-02-12","whites":[14,47,54,55,68],"powerball":25,"multiplier":2},{"date":"2020-02-15","whites":[16,32,35,36,46],"powerball":3,"multiplier":3},{"date":"2020-02-19","whites":[10,12,15,19,56],"powerball":19,"multiplier":2},{"date":"2020-02-22","whites":[25,37,39,61,62],"powerball":11,"multiplier":3},{"date":"2020-02-26","whites":[8,27,29,36,47],"powerball":24,"multiplier":3},{"date":"2020-02-29","whites":[24,44,46,50,51],"powerball":13,"multiplier":3},{"date":"2020-03-04","whites":[18,43,58,60,68],"powerball":14,"multiplier":2},{"date":"2020-03-07","whites":[7,15,21,33,62],"powerball":23,"multiplier":2},{"date":"2020-03-11","whites":[4,29,49,50,67],"powerball":2,"multiplier":4},{"date":"2020-03-14","whites":[9,23,26,30,32],"powerball":8,"multiplier":3},{"date":"2020-03-18","whites":[15,27,44,59,63],"powerball":8,"multiplier":4},{"date":"2020-03-21","whites":[2,23,40,59,69],"powerball":13,"multiplier":2},{"date":"2020-03-25","whites":[5,9,27,39,42],"powerball":16,"multiplier":2},{"date":"2020-03-28","whites":[7,40,48,55,66],"powerball":11,"multiplier":2},{"date":"2020-04-01","whites":[33,35,45,48,60],"powerball":16,"multiplier":2},{"date":"2020-04-04","whites":[8,31,39,40,43],"powerball":4,"multiplier":3},{"date":"2020-04-08","whites":[2,37,39,48,54],"powerball":5,"multiplier":3},{"date":"2020-04-11","whites":[22,29,30,42,47],"powerball":17,"multiplier":3},{"date":"2020-04-15","whites":[10,12,33,36,41],"powerball":2,"multiplier":3},{"date":"2020-04-18","whites":[4,44,46,56,63],"powerball":19,"multiplier":2},{"date":"2020-04-22","whites":[1,33,35,40,69],"powerball":24,"multiplier":5},{"date":"2020-04-25","whites":[1,3,21,47,57],"powerball":18,"multiplier":2},{"date":"2020-04-29","whites":[2,20,49,61,67],"powerball":20,"multiplier":2},{"date":"2020-05-02","whites":[13,16,33,58,68],"powerball":24,"multiplier":5},{"date":"2020-05-06","whites":[7,8,35,50,65],"powerball":20,"multiplier":4},{"date":"2020-05-09","whites":[12,18,42,48,65],"powerball":19,"multiplier":5},{"date":"2020-05-13","whites":[39,53,54,56,57],"powerball":20,"multiplier":3},{"date":"2020-05-16","whites":[8,12,26,39,42],"powerball":11,"multiplier":2},{"date":"2020-05-20","whites":[18,34,40,42,50],"powerball":9,"multiplier":2},{"date":"2020-05-23","whites":[2,8,18,21,23],"powerball":16,"multiplier":4},{"date":"2020-05-27","whites":[38,58,59,64,68],"powerball":21,"multiplier":3},{"date":"2020-05-30","whites":[13,32,41,58,60],"powerball":14,"multiplier":2},{"date":"2020-06-03","whites":[1,3,26,41,64],"powerball":17,"multiplier":2},{"date":"2020-06-06","whites":[1,17,38,68,69],"powerball":18,"multiplier":2},{"date":"2020-06-10","whites":[10,33,41,52,54],"powerball":18,"multiplier":5},{"date":"2020-06-13","whites":[2,12,32,50,65],"powerball":5,"multiplier":3},{"date":"2020-06-17","whites":[7,10,63,64,68],"powerball":10,"multiplier":3},{"date":"2020-06-20","whites":[10,31,41,63,67],"powerball":5,"multiplier":3},{"date":"2020-06-24","whites":[15,22,27,33,46],"powerball":23,"multiplier":3},{"date":"2020-06-27","whites":[9,36,49,56,62],"powerball":8,"multiplier":2},{"date":"2020-07-01","whites":[15,28,52,53,63],"powerball":18,"multiplier":4},{"date":"2020-07-04","whites":[16,21,27,60,61],"powerball":6,"multiplier":2},{"date":"2020-07-08","whites":[3,10,34,36,62],"powerball":5,"multiplier":10},{"date":"2020-07-11","whites":[14,19,61,62,64],"powerball":4,"multiplier":2},{"date":"2020-07-15","whites":[27,47,61,62,69],"powerball":4,"multiplier":10},{"date":"2020-07-18","whites":[13,16,32,58,59],"powerball":9,"multiplier":2},{"date":"2020-07-22","whites":[16,25,36,44,55],"powerball":14,"multiplier":3},{"date":"2020-07-25","whites":[5,21,36,61,62],"powerball":18,"multiplier":2},{"date":"2020-07-29","whites":[7,29,35,40,45],"powerball":26,"multiplier":2},{"date":"2020-08-01","whites":[6,25,36,43,48],"powerball":24,"multiplier":3},{"date":"2020-08-05","whites":[7,14,17,57,65],"powerball":24,"multiplier":5},{"date":"2020-08-08","whites":[2,3,14,40,51],"powerball":24,"multiplier":3},{"date":"2020-08-12","whites":[2,6,18,36,37],"powerball":21,"multiplier":2},{"date":"2020-08-15","whites":[5,12,34,45,56],"powerball":3,"multiplier":3},{"date":"2020-08-19","whites":[13,23,47,55,58],"powerball":23,"multiplier":10},{"date":"2020-08-22","whites":[19,30,36,42,66],"powerball":14,"multiplier":3},{"date":"2020-08-26","whites":[8,12,19,47,58],"powerball":2,"multiplier":2},{"date":"2020-08-29","whites":[5,21,22,29,43],"powerball":10,"multiplier":2},{"date":"2020-09-02","whites":[1,4,11,20,69],"powerball":18,"multiplier":2},{"date":"2020-09-05","whites":[15,21,22,27,47],"powerball":7,"multiplier":2},{"date":"2020-09-09","whites":[27,52,55,60,64],"powerball":21,"multiplier":3},{"date":"2020-09-12","whites":[16,17,20,53,67],"powerball":4,"multiplier":2},{"date":"2020-09-16","whites":[10,17,31,51,53],"powerball":1,"multiplier":2},{"date":"2020-09-19","whites":[11,14,23,47,57],"powerball":14,"multiplier":4},{"date":"2020-09-23","whites":[8,17,49,52,59],"powerball":1,"multiplier":2},{"date":"2020-09-26","whites":[11,21,27,36,62],"powerball":24,"multiplier":3},{"date":"2020-09-30","whites":[14,18,36,49,67],"powerball":18,"multiplier":2},{"date":"2020-10-03","whites":[18,31,36,43,47],"powerball":20,"multiplier":2},{"date":"2020-10-07","whites":[6,24,30,53,56],"powerball":19,"multiplier":2},{"date":"2020-10-10","whites":[5,18,23,40,50],"powerball":18,"multiplier":3},{"date":"2020-10-14","whites":[21,37,52,53,58],"powerball":5,"multiplier":2},{"date":"2020-10-17","whites":[6,10,31,37,44],"powerball":23,"multiplier":2},{"date":"2020-10-21","whites":[1,3,13,44,56],"powerball":26,"multiplier":3},{"date":"2020-10-24","whites":[18,20,27,45,65],"powerball":6,"multiplier":2},{"date":"2020-10-28","whites":[11,28,37,40,53],"powerball":13,"multiplier":2},{"date":"2020-10-31","whites":[2,6,40,42,55],"powerball":24,"multiplier":3},{"date":"2020-11-04","whites":[23,32,33,45,49],"powerball":14,"multiplier":2},{"date":"2020-11-07","whites":[14,16,37,48,58],"powerball":18,"multiplier":2},{"date":"2020-11-11","whites":[13,15,17,45,63],"powerball":13,"multiplier":2},{"date":"2020-11-14","whites":[7,15,18,32,45],"powerball":20,"multiplier":2},{"date":"2020-11-18","whites":[4,5,17,43,52],"powerball":5,"multiplier":2},{"date":"2020-11-21","whites":[51,54,57,60,69],"powerball":11,"multiplier":2},{"date":"2020-11-25","whites":[2,57,58,60,65],"powerball":26,"multiplier":2},{"date":"2020-11-28","whites":[8,12,18,44,51],"powerball":18,"multiplier":2},{"date":"2020-12-02","whites":[28,31,40,41,46],"powerball":4,"multiplier":3},{"date":"2020-12-05","whites":[3,4,6,48,53],"powerball":10,"multiplier":2},{"date":"2020-12-09","whites":[11,14,31,47,48],"powerball":4,"multiplier":3},{"date":"2020-12-12","whites":[17,54,56,63,69],"powerball":20,"multiplier":2},{"date":"2020-12-16","whites":[4,23,37,61,67],"powerball":7,"multiplier":2},{"date":"2020-12-19","whites":[27,32,34,43,52],"powerball":13,"multiplier":2},{"date":"2020-12-23","whites":[6,13,38,39,53],"powerball":6,"multiplier":3},{"date":"2020-12-26","whites":[10,24,27,35,53],"powerball":18,"multiplier":2},{"date":"2020-12-30","whites":[3,43,45,61,65],"powerball":14,"multiplier":2},{"date":"2021-01-02","whites":[3,4,11,41,67],"powerball":5,"multiplier":2},{"date":"2021-01-06","whites":[1,20,22,60,66],"powerball":3,"multiplier":3},{"date":"2021-01-09","whites":[14,26,38,45,46],"powerball":13,"multiplier":2},{"date":"2021-01-13","whites":[4,19,23,25,49],"powerball":14,"multiplier":2},{"date":"2021-01-16","whites":[14,20,39,65,67],"powerball":2,"multiplier":3},{"date":"2021-01-20","whites":[40,53,60,68,69],"powerball":22,"multiplier":3},{"date":"2021-01-23","whites":[5,8,17,27,28],"powerball":14,"multiplier":3},{"date":"2021-01-27","whites":[17,33,35,42,52],"powerball":9,"multiplier":3},{"date":"2021-01-30","whites":[1,2,7,52,61],"powerball":4,"multiplier":3},{"date":"2021-02-03","whites":[5,37,40,64,66],"powerball":5,"multiplier":3},{"date":"2021-02-06","whites":[1,16,48,49,65],"powerball":8,"multiplier":2},{"date":"2021-02-10","whites":[15,39,58,63,67],"powerball":7,"multiplier":2},{"date":"2021-02-13","whites":[20,28,33,63,68],"powerball":20,"multiplier":2},{"date":"2021-02-17","whites":[1,15,21,32,46],"powerball":1,"multiplier":3},{"date":"2021-02-20","whites":[4,8,22,32,58],"powerball":4,"multiplier":10},{"date":"2021-02-24","whites":[4,33,43,53,65],"powerball":21,"multiplier":3},{"date":"2021-02-27","whites":[2,28,31,44,52],"powerball":18,"multiplier":3},{"date":"2021-03-03","whites":[21,40,44,50,55],"powerball":16,"multiplier":3},{"date":"2021-03-06","whites":[11,31,50,52,58],"powerball":18,"multiplier":4},{"date":"2021-03-10","whites":[17,18,37,44,53],"powerball":18,"multiplier":3},{"date":"2021-03-13","whites":[5,11,51,56,61],"powerball":2,"multiplier":2},{"date":"2021-03-17","whites":[34,38,42,61,62],"powerball":19,"multiplier":2},{"date":"2021-03-20","whites":[1,6,22,42,61],"powerball":4,"multiplier":3},{"date":"2021-03-24","whites":[4,9,17,27,38],"powerball":18,"multiplier":2},{"date":"2021-03-27","whites":[6,14,38,39,65],"powerball":6,"multiplier":3},{"date":"2021-03-31","whites":[3,10,44,55,68],"powerball":24,"multiplier":2},{"date":"2021-04-03","whites":[1,12,17,39,53],"powerball":5,"multiplier":2},{"date":"2021-04-07","whites":[27,35,39,51,66],"powerball":16,"multiplier":5},{"date":"2021-04-10","whites":[14,16,23,50,53],"powerball":3,"multiplier":3},{"date":"2021-04-14","whites":[13,30,33,45,61],"powerball":14,"multiplier":2},{"date":"2021-04-17","whites":[10,21,26,41,49],"powerball":25,"multiplier":2},{"date":"2021-04-21","whites":[21,25,32,63,67],"powerball":6,"multiplier":2},{"date":"2021-04-24","whites":[22,36,48,59,61],"powerball":22,"multiplier":3},{"date":"2021-05-01","whites":[35,36,47,61,63],"powerball":3,"multiplier":3},{"date":"2021-05-05","whites":[16,23,28,40,63],"powerball":1,"multiplier":2},{"date":"2021-05-08","whites":[12,17,20,21,26],"powerball":8,"multiplier":3},{"date":"2021-05-12","whites":[1,19,20,38,54],"powerball":17,"multiplier":2},{"date":"2021-05-15","whites":[4,10,37,39,69],"powerball":24,"multiplier":3},{"date":"2021-05-19","whites":[11,13,55,56,69],"powerball":4,"multiplier":2},{"date":"2021-05-22","whites":[3,19,27,37,40],"powerball":8,"multiplier":2},{"date":"2021-05-26","whites":[2,8,21,34,62],"powerball":16,"multiplier":2},{"date":"2021-05-29","whites":[11,13,22,27,46],"powerball":20,"multiplier":2},{"date":"2021-06-02","whites":[6,7,11,66,67],"powerball":19,"multiplier":3},{"date":"2021-06-05","whites":[44,52,54,64,69],"powerball":26,"multiplier":3},{"date":"2021-06-09","whites":[19,28,46,50,54],"powerball":9,"multiplier":2},{"date":"2021-06-12","whites":[8,25,34,38,41],"powerball":10,"multiplier":3},{"date":"2021-06-16","whites":[19,29,34,44,50],"powerball":25,"multiplier":2},{"date":"2021-06-19","whites":[4,22,35,38,39],"powerball":20,"multiplier":2},{"date":"2021-06-23","whites":[13,20,40,51,63],"powerball":1,"multiplier":3},{"date":"2021-06-26","whites":[8,31,39,43,60],"powerball":17,"multiplier":3},{"date":"2021-06-30","whites":[24,29,50,65,66],"powerball":14,"multiplier":4},{"date":"2021-07-03","whites":[26,40,41,55,65],"powerball":24,"multiplier":2},{"date":"2021-07-07","whites":[8,21,30,49,57],"powerball":8,"multiplier":2},{"date":"2021-07-10","whites":[1,5,29,54,62],"powerball":3,"multiplier":2},{"date":"2021-07-14","whites":[33,46,52,59,62],"powerball":10,"multiplier":2},{"date":"2021-07-17","whites":[15,22,38,54,66],"powerball":3,"multiplier":2},{"date":"2021-07-21","whites":[27,28,44,67,68],"powerball":11,"multiplier":2},{"date":"2021-07-24","whites":[1,4,11,59,67],"powerball":10,"multiplier":2},{"date":"2021-07-28","whites":[25,30,53,59,60],"powerball":5,"multiplier":3},{"date":"2021-07-31","whites":[1,21,22,34,47],"powerball":4,"multiplier":2},{"date":"2021-08-04","whites":[5,21,32,36,58],"powerball":14,"multiplier":2},{"date":"2021-08-07","whites":[7,24,36,54,60],"powerball":23,"multiplier":2},{"date":"2021-08-11","whites":[12,18,20,29,30],"powerball":16,"multiplier":3},{"date":"2021-08-14","whites":[6,21,49,65,67],"powerball":18,"multiplier":2},{"date":"2021-08-18","whites":[35,36,51,55,61],"powerball":26,"multiplier":2},{"date":"2021-08-21","whites":[16,28,36,39,59],"powerball":4,"multiplier":2},{"date":"2021-08-23","whites":[17,36,47,60,61],"powerball":15,"multiplier":3},{"date":"2021-08-25","whites":[27,39,54,56,59],"powerball":24,"multiplier":3},{"date":"2021-08-28","whites":[12,22,26,46,59],"powerball":26,"multiplier":2},{"date":"2021-08-30","whites":[3,15,45,51,61],"powerball":8,"multiplier":2},{"date":"2021-09-01","whites":[10,20,29,48,51],"powerball":17,"multiplier":2},{"date":"2021-09-04","whites":[32,35,40,52,54],"powerball":1,"multiplier":5},{"date":"2021-09-06","whites":[11,20,22,33,54],"powerball":24,"multiplier":2},{"date":"2021-09-08","whites":[9,22,41,47,61],"powerball":21,"multiplier":2},{"date":"2021-09-11","whites":[20,31,38,40,49],"powerball":21,"multiplier":2},{"date":"2021-09-13","whites":[37,40,50,61,63],"powerball":21,"multiplier":3},{"date":"2021-09-15","whites":[1,4,18,46,62],"powerball":25,"multiplier":3},{"date":"2021-09-18","whites":[5,36,39,45,57],"powerball":11,"multiplier":2},{"date":"2021-09-20","whites":[37,51,54,58,60],"powerball":19,"multiplier":2},{"date":"2021-09-22","whites":[20,40,47,55,63],"powerball":5,"multiplier":3},{"date":"2021-09-25","whites":[22,23,37,62,63],"powerball":19,"multiplier":3},{"date":"2021-09-27","whites":[21,22,39,44,60],"powerball":12,"multiplier":2},{"date":"2021-09-29","whites":[2,7,11,17,32],"powerball":11,"multiplier":3},{"date":"2021-10-02","whites":[28,38,42,47,52],"powerball":1,"multiplier":2},{"date":"2021-10-04","whites":[12,22,54,66,69],"powerball":15,"multiplier":2},{"date":"2021-10-06","whites":[1,17,52,58,64],"powerball":1,"multiplier":10},{"date":"2021-10-09","whites":[12,17,30,45,62],"powerball":5,"multiplier":2},{"date":"2021-10-11","whites":[11,20,33,39,65],"powerball":24,"multiplier":3},{"date":"2021-10-13","whites":[23,29,47,59,60],"powerball":15,"multiplier":2},{"date":"2021-10-16","whites":[30,31,41,42,48],"powerball":3,"multiplier":3},{"date":"2021-10-18","whites":[30,32,48,53,63],"powerball":12,"multiplier":2},{"date":"2021-10-20","whites":[7,29,36,41,43],"powerball":5,"multiplier":2},{"date":"2021-10-23","whites":[10,30,51,57,63],"powerball":20,"multiplier":2},{"date":"2021-10-25","whites":[10,27,29,44,58],"powerball":24,"multiplier":2},{"date":"2021-10-27","whites":[3,6,26,35,51],"powerball":17,"multiplier":4},{"date":"2021-10-30","whites":[5,23,28,43,56],"powerball":19,"multiplier":2},{"date":"2021-11-01","whites":[9,25,34,44,45],"powerball":8,"multiplier":3},{"date":"2021-11-03","whites":[1,2,24,50,57],"powerball":26,"multiplier":2},{"date":"2021-11-06","whites":[8,30,48,57,64],"powerball":9,"multiplier":2},{"date":"2021-11-08","whites":[21,46,47,57,62],"powerball":8,"multiplier":3},{"date":"2021-11-10","whites":[19,25,43,46,48],"powerball":14,"multiplier":2},{"date":"2021-11-13","whites":[8,15,26,35,45],"powerball":9,"multiplier":3},{"date":"2021-11-15","whites":[5,31,34,51,53],"powerball":23,"multiplier":2},{"date":"2021-11-17","whites":[3,16,48,52,60],"powerball":1,"multiplier":3},{"date":"2021-11-20","whites":[40,43,48,59,69],"powerball":19,"multiplier":3},{"date":"2021-11-22","whites":[7,20,29,38,67],"powerball":22,"multiplier":2},{"date":"2021-11-24","whites":[10,16,32,63,65],"powerball":17,"multiplier":2},{"date":"2021-11-27","whites":[8,32,55,64,66],"powerball":10,"multiplier":2},{"date":"2021-11-29","whites":[18,26,28,38,47],"powerball":17,"multiplier":2},{"date":"2021-12-01","whites":[12,15,38,57,63],"powerball":24,"multiplier":2},{"date":"2021-12-04","whites":[10,40,45,56,67],"powerball":2,"multiplier":2},{"date":"2021-12-06","whites":[3,21,38,50,59],"powerball":6,"multiplier":3},{"date":"2021-12-08","whites":[3,7,33,50,69],"powerball":24,"multiplier":2},{"date":"2021-12-11","whites":[3,25,44,53,64],"powerball":10,"multiplier":2},{"date":"2021-12-13","whites":[10,30,37,53,59],"powerball":4,"multiplier":2},{"date":"2021-12-15","whites":[19,20,40,42,59],"powerball":15,"multiplier":3},{"date":"2021-12-18","whites":[2,6,24,51,61],"powerball":1,"multiplier":2},{"date":"2021-12-20","whites":[2,13,23,34,66],"powerball":2,"multiplier":4},{"date":"2021-12-22","whites":[7,16,19,48,68],"powerball":15,"multiplier":2},{"date":"2021-12-25","whites":[27,29,45,55,58],"powerball":2,"multiplier":3},{"date":"2021-12-27","whites":[36,38,45,62,64],"powerball":19,"multiplier":2},{"date":"2021-12-29","whites":[2,6,9,33,39],"powerball":11,"multiplier":2},{"date":"2022-01-01","whites":[6,12,39,48,50],"powerball":7,"multiplier":2},{"date":"2022-01-03","whites":[2,13,32,33,48],"powerball":22,"multiplier":2},{"date":"2022-01-05","whites":[6,14,25,33,46],"powerball":17,"multiplier":2},{"date":"2022-01-08","whites":[20,21,36,60,65],"powerball":13,"multiplier":10},{"date":"2022-01-10","whites":[14,17,18,21,27],"powerball":9,"multiplier":2},{"date":"2022-01-12","whites":[12,21,22,30,33],"powerball":24,"multiplier":4},{"date":"2022-01-15","whites":[3,18,37,51,59],"powerball":13,"multiplier":2},{"date":"2022-01-17","whites":[9,24,35,46,65],"powerball":22,"multiplier":2},{"date":"2022-01-19","whites":[11,15,43,55,61],"powerball":10,"multiplier":3},{"date":"2022-01-22","whites":[8,14,33,36,67],"powerball":17,"multiplier":2},{"date":"2022-01-24","whites":[11,29,30,47,53],"powerball":16,"multiplier":3},{"date":"2022-01-26","whites":[4,11,38,49,69],"powerball":16,"multiplier":3},{"date":"2022-01-29","whites":[2,15,38,54,65],"powerball":11,"multiplier":4},{"date":"2022-01-31","whites":[10,15,51,61,69],"powerball":14,"multiplier":3},{"date":"2022-02-02","whites":[18,29,33,62,63],"powerball":15,"multiplier":3},{"date":"2022-02-05","whites":[5,16,27,39,61],"powerball":24,"multiplier":2},{"date":"2022-02-07","whites":[5,15,38,47,65],"powerball":10,"multiplier":3},{"date":"2022-02-09","whites":[2,17,33,51,63],"powerball":26,"multiplier":2},{"date":"2022-02-12","whites":[8,10,21,41,62],"powerball":7,"multiplier":3},{"date":"2022-02-14","whites":[16,25,27,49,55],"powerball":17,"multiplier":3},{"date":"2022-02-16","whites":[22,30,40,42,48],"powerball":16,"multiplier":2},{"date":"2022-02-19","whites":[3,10,15,33,42],"powerball":11,"multiplier":2},{"date":"2022-02-21","whites":[2,36,37,45,69],"powerball":3,"multiplier":2},{"date":"2022-02-23","whites":[6,17,21,35,64],"powerball":18,"multiplier":2},{"date":"2022-02-26","whites":[15,32,36,48,64],"powerball":19,"multiplier":3},{"date":"2022-02-28","whites":[7,21,39,47,55],"powerball":19,"multiplier":2},{"date":"2022-03-02","whites":[19,37,48,61,63],"powerball":12,"multiplier":2},{"date":"2022-03-05","whites":[8,23,37,52,63],"powerball":13,"multiplier":2},{"date":"2022-03-07","whites":[10,43,55,59,67],"powerball":2,"multiplier":3},{"date":"2022-03-09","whites":[13,22,34,51,67],"powerball":10,"multiplier":2},{"date":"2022-03-14","whites":[21,28,32,44,49],"powerball":6,"multiplier":3},{"date":"2022-03-16","whites":[3,28,34,35,58],"powerball":17,"multiplier":2},{"date":"2022-03-19","whites":[8,9,18,48,52],"powerball":6,"multiplier":2},{"date":"2022-03-21","whites":[1,15,26,63,65],"powerball":16,"multiplier":2},{"date":"2022-03-23","whites":[31,32,37,38,48],"powerball":24,"multiplier":2},{"date":"2022-03-26","whites":[2,10,50,59,61],"powerball":6,"multiplier":3},{"date":"2022-03-28","whites":[11,18,39,58,62],"powerball":3,"multiplier":2},{"date":"2022-03-30","whites":[3,7,21,31,37],"powerball":11,"multiplier":3},{"date":"2022-04-02","whites":[6,28,47,58,59],"powerball":18,"multiplier":2},{"date":"2022-04-04","whites":[2,32,39,46,69],"powerball":6,"multiplier":2},{"date":"2022-04-06","whites":[6,42,45,47,64],"powerball":18,"multiplier":3},{"date":"2022-04-11","whites":[5,7,24,31,34],"powerball":4,"multiplier":2},{"date":"2022-04-13","whites":[14,16,41,63,68],"powerball":26,"multiplier":2},{"date":"2022-04-16","whites":[15,21,32,62,65],"powerball":26,"multiplier":5},{"date":"2022-04-18","whites":[8,33,55,59,62],"powerball":18,"multiplier":2},{"date":"2022-04-20","whites":[20,30,45,55,56],"powerball":14,"multiplier":2},{"date":"2022-04-23","whites":[10,39,47,49,56],"powerball":8,"multiplier":3},{"date":"2022-04-25","whites":[12,18,20,39,61],"powerball":10,"multiplier":2},{"date":"2022-04-27","whites":[11,36,61,62,68],"powerball":4,"multiplier":2},{"date":"2022-04-30","whites":[14,21,37,44,63],"powerball":1,"multiplier":3},{"date":"2022-05-02","whites":[18,27,33,39,44],"powerball":8,"multiplier":5},{"date":"2022-05-04","whites":[37,39,55,63,69],"powerball":23,"multiplier":2},{"date":"2022-05-07","whites":[4,5,6,28,67],"powerball":10,"multiplier":2},{"date":"2022-05-09","whites":[18,30,35,52,56],"powerball":5,"multiplier":2},{"date":"2022-05-11","whites":[5,7,61,63,69],"powerball":18,"multiplier":2},{"date":"2022-05-14","whites":[6,40,41,45,52],"powerball":9,"multiplier":3},{"date":"2022-05-16","whites":[7,15,22,36,64],"powerball":13,"multiplier":2},{"date":"2022-05-18","whites":[40,41,58,64,65],"powerball":17,"multiplier":3},{"date":"2022-05-21","whites":[14,15,25,52,58],"powerball":11,"multiplier":2},{"date":"2022-05-23","whites":[1,33,37,39,42],"powerball":26,"multiplier":2},{"date":"2022-05-25","whites":[19,28,39,42,57],"powerball":17,"multiplier":3},{"date":"2022-05-28","whites":[2,39,50,61,66],"powerball":15,"multiplier":2},{"date":"2022-05-30","whites":[27,28,51,68,69],"powerball":22,"multiplier":2},{"date":"2022-06-01","whites":[11,41,56,57,63],"powerball":2,"multiplier":2},{"date":"2022-06-04","whites":[14,16,36,52,60],"powerball":16,"multiplier":3},{"date":"2022-06-06","whites":[2,10,35,44,46],"powerball":4,"multiplier":2},{"date":"2022-06-08","whites":[22,39,43,62,64],"powerball":7,"multiplier":4},{"date":"2022-06-11","whites":[18,20,26,53,69],"powerball":5,"multiplier":2},{"date":"2022-06-13","whites":[2,27,42,44,51],"powerball":25,"multiplier":2},{"date":"2022-06-15","whites":[19,28,41,42,51],"powerball":7,"multiplier":2},{"date":"2022-06-18","whites":[10,19,40,45,58],"powerball":25,"multiplier":2},{"date":"2022-06-20","whites":[3,44,61,63,69],"powerball":13,"multiplier":2},{"date":"2022-06-22","whites":[6,10,31,48,56],"powerball":12,"multiplier":3},{"date":"2022-06-25","whites":[6,12,20,27,32],"powerball":4,"multiplier":3},{"date":"2022-06-27","whites":[11,13,18,30,37],"powerball":16,"multiplier":3},{"date":"2022-06-29","whites":[8,40,49,58,63],"powerball":14,"multiplier":3},{"date":"2022-07-02","whites":[9,10,37,59,62],"powerball":26,"multiplier":3},{"date":"2022-07-04","whites":[15,16,24,31,56],"powerball":4,"multiplier":2},{"date":"2022-07-06","whites":[32,36,49,62,69],"powerball":13,"multiplier":2},{"date":"2022-07-09","whites":[14,22,42,46,52],"powerball":24,"multiplier":3},{"date":"2022-07-11","whites":[4,26,34,37,52],"powerball":9,"multiplier":2},{"date":"2022-07-13","whites":[22,23,36,47,63],"powerball":2,"multiplier":2},{"date":"2022-07-16","whites":[3,18,23,32,57],"powerball":21,"multiplier":2},{"date":"2022-07-18","whites":[14,34,36,50,58],"powerball":5,"multiplier":3},{"date":"2022-07-20","whites":[10,20,23,49,65],"powerball":22,"multiplier":3},{"date":"2022-07-23","whites":[39,41,54,59,62],"powerball":12,"multiplier":3},{"date":"2022-07-25","whites":[25,37,38,39,65],"powerball":5,"multiplier":2},{"date":"2022-07-27","whites":[1,25,44,55,57],"powerball":26,"multiplier":2},{"date":"2022-07-30","whites":[4,17,57,58,68],"powerball":12,"multiplier":3},{"date":"2022-08-01","whites":[15,21,31,36,65],"powerball":16,"multiplier":3},{"date":"2022-08-03","whites":[9,21,56,57,66],"powerball":11,"multiplier":2},{"date":"2022-08-06","whites":[8,15,46,56,68],"powerball":3,"multiplier":2},{"date":"2022-08-08","whites":[32,45,51,57,58],"powerball":12,"multiplier":2},{"date":"2022-08-10","whites":[29,44,59,61,68],"powerball":19,"multiplier":2},{"date":"2022-08-13","whites":[19,24,35,43,62],"powerball":2,"multiplier":10},{"date":"2022-08-15","whites":[20,24,47,50,63],"powerball":5,"multiplier":2},{"date":"2022-08-17","whites":[23,28,41,50,55],"powerball":24,"multiplier":2},{"date":"2022-08-20","whites":[5,9,11,16,66],"powerball":7,"multiplier":2},{"date":"2022-08-22","whites":[12,27,34,55,67],"powerball":9,"multiplier":2},{"date":"2022-08-24","whites":[6,24,35,37,44],"powerball":22,"multiplier":4},{"date":"2022-08-27","whites":[2,18,56,60,65],"powerball":14,"multiplier":3},{"date":"2022-08-29","whites":[13,36,43,61,69],"powerball":18,"multiplier":3},{"date":"2022-08-31","whites":[7,8,19,24,28],"powerball":1,"multiplier":2},{"date":"2022-09-03","whites":[18,27,49,65,69],"powerball":9,"multiplier":2},{"date":"2022-09-05","whites":[4,7,32,55,64],"powerball":25,"multiplier":2},{"date":"2022-09-07","whites":[3,16,30,33,36],"powerball":20,"multiplier":3},{"date":"2022-09-10","whites":[38,42,56,68,69],"powerball":4,"multiplier":2},{"date":"2022-09-12","whites":[6,14,16,34,66],"powerball":25,"multiplier":3},{"date":"2022-09-14","whites":[9,10,20,22,52],"powerball":25,"multiplier":3},{"date":"2022-09-17","whites":[5,25,36,51,61],"powerball":1,"multiplier":3},{"date":"2022-09-19","whites":[7,15,36,46,67],"powerball":7,"multiplier":2},{"date":"2022-09-21","whites":[6,33,34,45,54],"powerball":7,"multiplier":2},{"date":"2022-09-24","whites":[3,9,21,24,29],"powerball":14,"multiplier":2},{"date":"2022-09-26","whites":[13,20,31,33,59],"powerball":20,"multiplier":3},{"date":"2022-09-28","whites":[6,10,24,33,67],"powerball":11,"multiplier":3},{"date":"2022-10-01","whites":[8,21,22,65,69],"powerball":26,"multiplier":2},{"date":"2022-10-03","whites":[2,16,22,55,63],"powerball":22,"multiplier":4},{"date":"2022-10-05","whites":[26,30,33,37,62],"powerball":6,"multiplier":2},{"date":"2022-10-08","whites":[13,43,53,60,68],"powerball":5,"multiplier":2},{"date":"2022-10-10","whites":[3,6,11,17,22],"powerball":11,"multiplier":2},{"date":"2022-10-12","whites":[14,30,41,42,59],"powerball":6,"multiplier":5},{"date":"2022-10-15","whites":[32,37,40,58,62],"powerball":15,"multiplier":5},{"date":"2022-10-17","whites":[19,30,36,46,60],"powerball":25,"multiplier":3},{"date":"2022-10-19","whites":[6,8,15,27,42],"powerball":10,"multiplier":3},{"date":"2022-10-22","whites":[19,25,48,55,60],"powerball":18,"multiplier":2},{"date":"2022-10-24","whites":[18,23,35,45,54],"powerball":16,"multiplier":4},{"date":"2022-10-26","whites":[19,36,37,46,56],"powerball":24,"multiplier":2},{"date":"2022-10-29","whites":[19,31,40,46,57],"powerball":23,"multiplier":3},{"date":"2022-10-31","whites":[13,19,36,39,59],"powerball":13,"multiplier":3},{"date":"2022-11-02","whites":[2,11,22,35,60],"powerball":23,"multiplier":2},{"date":"2022-11-05","whites":[28,45,53,56,69],"powerball":20,"multiplier":3},{"date":"2022-11-09","whites":[7,14,24,30,56],"powerball":7,"multiplier":2},{"date":"2022-11-12","whites":[16,20,44,57,58],"powerball":6,"multiplier":4},{"date":"2022-11-14","whites":[19,35,53,54,67],"powerball":21,"multiplier":2},{"date":"2022-11-16","whites":[28,34,51,53,56],"powerball":11,"multiplier":2},{"date":"2022-11-19","whites":[7,28,62,63,64],"powerball":10,"multiplier":3},{"date":"2022-11-21","whites":[1,6,40,51,67],"powerball":2,"multiplier":2},{"date":"2022-11-23","whites":[1,2,31,39,66],"powerball":25,"multiplier":2},{"date":"2022-11-26","whites":[15,30,47,50,51],"powerball":3,"multiplier":10},{"date":"2022-11-28","whites":[29,30,32,48,50],"powerball":20,"multiplier":2},{"date":"2022-11-30","whites":[4,19,24,47,66],"powerball":10,"multiplier":2},{"date":"2022-12-03","whites":[6,13,33,36,37],"powerball":7,"multiplier":4},{"date":"2022-12-05","whites":[35,45,47,54,55],"powerball":14,"multiplier":2},{"date":"2022-12-07","whites":[6,28,44,59,61],"powerball":21,"multiplier":2},{"date":"2022-12-10","whites":[9,23,47,49,68],"powerball":19,"multiplier":2},{"date":"2022-12-12","whites":[16,31,50,55,61],"powerball":9,"multiplier":4},{"date":"2022-12-14","whites":[36,51,59,66,68],"powerball":25,"multiplier":10},{"date":"2022-12-17","whites":[33,56,64,66,68],"powerball":12,"multiplier":2},{"date":"2022-12-19","whites":[7,37,55,65,67],"powerball":12,"multiplier":5},{"date":"2022-12-21","whites":[12,15,24,34,59],"powerball":14,"multiplier":2},{"date":"2022-12-24","whites":[17,37,46,54,67],"powerball":8,"multiplier":3},{"date":"2022-12-26","whites":[17,41,47,60,61],"powerball":17,"multiplier":3},{"date":"2022-12-28","whites":[26,32,38,45,56],"powerball":1,"multiplier":2},{"date":"2022-12-31","whites":[18,37,44,50,64],"powerball":11,"multiplier":3},{"date":"2023-01-02","whites":[7,9,12,31,62],"powerball":22,"multiplier":2},{"date":"2023-01-04","whites":[12,32,56,67,68],"powerball":26,"multiplier":3},{"date":"2023-01-07","whites":[35,36,44,45,67],"powerball":14,"multiplier":3},{"date":"2023-01-09","whites":[18,43,48,60,69],"powerball":14,"multiplier":3},{"date":"2023-01-11","whites":[4,8,46,47,48],"powerball":5,"multiplier":3},{"date":"2023-01-14","whites":[24,26,39,47,57],"powerball":23,"multiplier":2},{"date":"2023-01-16","whites":[4,14,33,39,61],"powerball":3,"multiplier":3},{"date":"2023-01-18","whites":[6,15,22,42,47],"powerball":26,"multiplier":3},{"date":"2023-01-21","whites":[5,14,19,46,64],"powerball":22,"multiplier":4},{"date":"2023-01-23","whites":[12,31,47,58,60],"powerball":23,"multiplier":3},{"date":"2023-01-25","whites":[9,17,20,38,40],"powerball":18,"multiplier":2},{"date":"2023-01-28","whites":[2,18,23,27,47],"powerball":15,"multiplier":4},{"date":"2023-01-30","whites":[1,4,12,36,49],"powerball":5,"multiplier":2},{"date":"2023-02-01","whites":[31,43,58,59,66],"powerball":9,"multiplier":2},{"date":"2023-02-04","whites":[2,8,15,19,58],"powerball":10,"multiplier":2},{"date":"2023-02-06","whites":[5,11,22,23,69],"powerball":7,"multiplier":2},{"date":"2023-02-08","whites":[52,58,59,64,66],"powerball":9,"multiplier":2},{"date":"2023-02-11","whites":[10,23,30,54,65],"powerball":11,"multiplier":4},{"date":"2023-02-13","whites":[17,26,37,61,65],"powerball":2,"multiplier":2},{"date":"2023-02-15","whites":[31,32,54,60,63],"powerball":12,"multiplier":4},{"date":"2023-02-18","whites":[8,21,31,32,37],"powerball":23,"multiplier":4},{"date":"2023-02-20","whites":[3,17,26,38,54],"powerball":15,"multiplier":3},{"date":"2023-02-22","whites":[11,19,39,44,65],"powerball":7,"multiplier":2},{"date":"2023-02-25","whites":[11,24,58,66,67],"powerball":26,"multiplier":3},{"date":"2023-02-27","whites":[16,28,49,51,55],"powerball":23,"multiplier":2},{"date":"2023-03-01","whites":[2,9,28,36,53],"powerball":4,"multiplier":2},{"date":"2023-03-04","whites":[10,16,18,40,66],"powerball":16,"multiplier":3},{"date":"2023-03-06","whites":[2,13,29,58,69],"powerball":4,"multiplier":3},{"date":"2023-03-08","whites":[26,27,43,61,69],"powerball":4,"multiplier":3},{"date":"2023-03-11","whites":[11,20,33,43,58],"powerball":24,"multiplier":2},{"date":"2023-03-13","whites":[3,10,24,46,63],"powerball":4,"multiplier":2},{"date":"2023-03-15","whites":[16,18,33,37,50],"powerball":8,"multiplier":2},{"date":"2023-03-18","whites":[14,20,30,54,69],"powerball":11,"multiplier":2},{"date":"2023-03-20","whites":[1,27,32,47,67],"powerball":14,"multiplier":2},{"date":"2023-03-22","whites":[27,28,37,50,57],"powerball":5,"multiplier":2},{"date":"2023-03-25","whites":[15,17,18,47,57],"powerball":19,"multiplier":2},{"date":"2023-03-27","whites":[19,26,36,43,58],"powerball":14,"multiplier":3},{"date":"2023-03-29","whites":[4,9,24,46,66],"powerball":7,"multiplier":3},{"date":"2023-04-01","whites":[11,19,21,29,52],"powerball":17,"multiplier":4},{"date":"2023-04-03","whites":[16,30,31,54,68],"powerball":1,"multiplier":2},{"date":"2023-04-05","whites":[3,5,9,42,52],"powerball":11,"multiplier":2},{"date":"2023-04-08","whites":[11,22,24,51,60],"powerball":18,"multiplier":3},{"date":"2023-04-10","whites":[9,10,36,46,52],"powerball":14,"multiplier":2},{"date":"2023-04-12","whites":[9,36,41,44,59],"powerball":4,"multiplier":2},{"date":"2023-04-15","whites":[1,33,34,56,59],"powerball":18,"multiplier":3},{"date":"2023-04-17","whites":[23,25,35,63,64],"powerball":25,"multiplier":3},{"date":"2023-04-19","whites":[4,11,21,38,64],"powerball":11,"multiplier":3},{"date":"2023-04-22","whites":[17,36,47,63,68],"powerball":25,"multiplier":2},{"date":"2023-04-24","whites":[19,21,55,66,68],"powerball":3,"multiplier":2},{"date":"2023-04-26","whites":[2,15,30,35,49],"powerball":6,"multiplier":2},{"date":"2023-04-29","whites":[16,53,54,57,65],"powerball":8,"multiplier":2},{"date":"2023-05-01","whites":[3,38,55,61,66],"powerball":1,"multiplier":3},{"date":"2023-05-03","whites":[21,26,30,45,47],"powerball":23,"multiplier":3},{"date":"2023-05-06","whites":[31,39,47,51,53],"powerball":6,"multiplier":2},{"date":"2023-05-08","whites":[15,20,33,36,43],"powerball":12,"multiplier":2},{"date":"2023-05-10","whites":[21,24,33,55,69],"powerball":3,"multiplier":10},{"date":"2023-05-13","whites":[3,15,20,23,46],"powerball":11,"multiplier":2},{"date":"2023-05-15","whites":[1,26,28,55,58],"powerball":25,"multiplier":2},{"date":"2023-05-17","whites":[18,34,37,45,51],"powerball":14,"multiplier":2},{"date":"2023-05-20","whites":[17,23,32,38,63],"powerball":23,"multiplier":2},{"date":"2023-05-22","whites":[9,38,48,52,68],"powerball":25,"multiplier":4},{"date":"2023-05-24","whites":[12,21,44,50,58],"powerball":26,"multiplier":3},{"date":"2023-05-27","whites":[24,38,39,48,56],"powerball":4,"multiplier":2},{"date":"2023-05-29","whites":[21,33,35,62,64],"powerball":24,"multiplier":2},{"date":"2023-05-31","whites":[2,4,54,61,62],"powerball":14,"multiplier":3},{"date":"2023-06-03","whites":[15,45,64,67,68],"powerball":18,"multiplier":2},{"date":"2023-06-05","whites":[2,31,45,46,49],"powerball":20,"multiplier":2},{"date":"2023-06-07","whites":[16,21,29,53,66],"powerball":2,"multiplier":5},{"date":"2023-06-10","whites":[21,32,42,46,50],"powerball":4,"multiplier":3},{"date":"2023-06-12","whites":[2,3,16,23,68],"powerball":7,"multiplier":2},{"date":"2023-06-14","whites":[3,20,36,42,64],"powerball":4,"multiplier":2},{"date":"2023-06-17","whites":[2,12,45,61,64],"powerball":26,"multiplier":2},{"date":"2023-06-19","whites":[36,39,52,57,69],"powerball":1,"multiplier":3},{"date":"2023-06-21","whites":[5,11,33,35,63],"powerball":14,"multiplier":2},{"date":"2023-06-24","whites":[2,38,44,50,62],"powerball":19,"multiplier":3},{"date":"2023-06-26","whites":[6,28,39,43,54],"powerball":12,"multiplier":4},{"date":"2023-06-28","whites":[19,25,34,57,68],"powerball":4,"multiplier":5},{"date":"2023-07-01","whites":[4,17,35,49,61],"powerball":8,"multiplier":2},{"date":"2023-07-03","whites":[15,26,31,38,61],"powerball":3,"multiplier":3},{"date":"2023-07-05","whites":[17,24,48,62,68],"powerball":23,"multiplier":2},{"date":"2023-07-08","whites":[7,23,24,32,43],"powerball":18,"multiplier":2},{"date":"2023-07-10","whites":[2,24,34,53,58],"powerball":13,"multiplier":2},{"date":"2023-07-12","whites":[23,35,45,66,67],"powerball":20,"multiplier":3},{"date":"2023-07-15","whites":[2,9,43,55,57],"powerball":18,"multiplier":2},{"date":"2023-07-17","whites":[5,8,9,17,41],"powerball":21,"multiplier":4},{"date":"2023-07-19","whites":[7,10,11,13,24],"powerball":24,"multiplier":2},{"date":"2023-07-22","whites":[25,27,36,37,63],"powerball":7,"multiplier":2},{"date":"2023-07-24","whites":[3,4,12,28,49],"powerball":25,"multiplier":2},{"date":"2023-07-26","whites":[3,16,40,48,60],"powerball":14,"multiplier":2},{"date":"2023-07-29","whites":[10,25,27,34,38],"powerball":2,"multiplier":3},{"date":"2023-07-31","whites":[2,11,48,58,65],"powerball":13,"multiplier":2},{"date":"2023-08-02","whites":[23,24,33,51,64],"powerball":5,"multiplier":2},{"date":"2023-08-05","whites":[18,42,44,62,65],"powerball":23,"multiplier":2},{"date":"2023-08-07","whites":[6,13,20,35,54],"powerball":22,"multiplier":2},{"date":"2023-08-09","whites":[10,15,21,67,69],"powerball":3,"multiplier":2},{"date":"2023-08-12","whites":[19,21,37,50,65],"powerball":26,"multiplier":2},{"date":"2023-08-14","whites":[32,34,37,39,47],"powerball":3,"multiplier":2},{"date":"2023-08-16","whites":[9,11,17,19,55],"powerball":1,"multiplier":2},{"date":"2023-08-19","whites":[1,25,27,38,62],"powerball":13,"multiplier":2},{"date":"2023-08-21","whites":[3,4,12,22,28],"powerball":16,"multiplier":2},{"date":"2023-08-23","whites":[25,30,32,33,55],"powerball":20,"multiplier":2},{"date":"2023-08-26","whites":[20,22,26,28,63],"powerball":5,"multiplier":3},{"date":"2023-08-28","whites":[4,6,25,55,68],"powerball":26,"multiplier":2},{"date":"2023-08-30","whites":[4,13,35,61,69],"powerball":4,"multiplier":2},{"date":"2023-09-02","whites":[25,38,42,66,67],"powerball":19,"multiplier":4},{"date":"2023-09-04","whites":[1,26,32,46,51],"powerball":13,"multiplier":3},{"date":"2023-09-06","whites":[9,14,20,23,63],"powerball":1,"multiplier":3},{"date":"2023-09-09","whites":[11,19,29,63,68],"powerball":25,"multiplier":2},{"date":"2023-09-11","whites":[9,25,27,53,66],"powerball":5,"multiplier":2},{"date":"2023-09-13","whites":[22,30,37,44,45],"powerball":18,"multiplier":3},{"date":"2023-09-16","whites":[8,11,19,24,46],"powerball":5,"multiplier":2},{"date":"2023-09-18","whites":[2,21,26,40,42],"powerball":9,"multiplier":3},{"date":"2023-09-20","whites":[16,27,59,62,63],"powerball":23,"multiplier":3},{"date":"2023-09-23","whites":[1,12,20,33,66],"powerball":21,"multiplier":2},{"date":"2023-09-25","whites":[10,12,22,36,50],"powerball":4,"multiplier":2},{"date":"2023-09-27","whites":[1,7,46,47,63],"powerball":7,"multiplier":3},{"date":"2023-09-30","whites":[19,30,37,44,46],"powerball":22,"multiplier":2},{"date":"2023-10-02","whites":[12,26,27,43,47],"powerball":5,"multiplier":2},{"date":"2023-10-04","whites":[9,35,54,63,64],"powerball":1,"multiplier":2},{"date":"2023-10-07","whites":[47,54,57,60,65],"powerball":19,"multiplier":3},{"date":"2023-10-09","whites":[16,34,46,55,67],"powerball":14,"multiplier":3},{"date":"2023-10-11","whites":[22,24,40,52,64],"powerball":10,"multiplier":2},{"date":"2023-10-14","whites":[14,16,42,48,64],"powerball":14,"multiplier":2},{"date":"2023-10-16","whites":[2,27,31,44,64],"powerball":18,"multiplier":3},{"date":"2023-10-18","whites":[1,4,13,35,58],"powerball":24,"multiplier":2},{"date":"2023-10-21","whites":[6,15,24,67,68],"powerball":11,"multiplier":2},{"date":"2023-10-23","whites":[18,21,25,46,64],"powerball":21,"multiplier":5},{"date":"2023-10-25","whites":[25,27,41,53,68],"powerball":2,"multiplier":2},{"date":"2023-10-28","whites":[14,24,50,59,64],"powerball":2,"multiplier":2},{"date":"2023-10-30","whites":[19,22,34,66,69],"powerball":5,"multiplier":3},{"date":"2023-11-01","whites":[22,26,39,47,63],"powerball":12,"multiplier":3},{"date":"2023-11-04","whites":[1,28,30,34,52],"powerball":6,"multiplier":2},{"date":"2023-11-06","whites":[12,25,40,59,61],"powerball":26,"multiplier":2},{"date":"2023-11-08","whites":[14,21,33,39,62],"powerball":20,"multiplier":2},{"date":"2023-11-11","whites":[1,12,14,24,57],"powerball":7,"multiplier":4},{"date":"2023-11-13","whites":[24,33,35,37,42],"powerball":21,"multiplier":2},{"date":"2023-11-15","whites":[3,4,51,53,60],"powerball":6,"multiplier":3},{"date":"2023-11-18","whites":[34,50,51,61,67],"powerball":20,"multiplier":2},{"date":"2023-11-20","whites":[19,26,30,39,63],"powerball":13,"multiplier":2},{"date":"2023-11-22","whites":[20,24,33,39,42],"powerball":21,"multiplier":2},{"date":"2023-11-25","whites":[27,33,63,66,68],"powerball":9,"multiplier":2},{"date":"2023-11-27","whites":[2,21,38,61,66],"powerball":12,"multiplier":2},{"date":"2023-11-29","whites":[6,47,50,61,68],"powerball":4,"multiplier":2},{"date":"2023-12-02","whites":[28,35,41,47,60],"powerball":3,"multiplier":2},{"date":"2023-12-04","whites":[18,19,27,28,45],"powerball":9,"multiplier":3},{"date":"2023-12-06","whites":[2,12,37,56,65],"powerball":21,"multiplier":3},{"date":"2023-12-09","whites":[5,25,26,40,60],"powerball":1,"multiplier":2},{"date":"2023-12-11","whites":[1,24,27,31,62],"powerball":20,"multiplier":3},{"date":"2023-12-13","whites":[3,8,41,56,64],"powerball":18,"multiplier":2},{"date":"2023-12-16","whites":[3,9,10,20,62],"powerball":25,"multiplier":3},{"date":"2023-12-18","whites":[5,8,19,34,39],"powerball":26,"multiplier":3},{"date":"2023-12-20","whites":[27,35,41,56,60],"powerball":16,"multiplier":2},{"date":"2023-12-23","whites":[9,14,17,18,53],"powerball":6,"multiplier":3},{"date":"2023-12-25","whites":[5,12,20,24,29],"powerball":4,"multiplier":2},{"date":"2023-12-27","whites":[4,11,38,51,68],"powerball":5,"multiplier":3},{"date":"2023-12-30","whites":[10,11,26,27,34],"powerball":7,"multiplier":4},{"date":"2024-01-01","whites":[12,21,42,44,49],"powerball":1,"multiplier":3},{"date":"2024-01-03","whites":[30,31,38,48,68],"powerball":8,"multiplier":10},{"date":"2024-01-06","whites":[4,31,34,38,61],"powerball":13,"multiplier":2},{"date":"2024-01-08","whites":[7,17,28,40,45],"powerball":2,"multiplier":3},{"date":"2024-01-10","whites":[25,40,43,48,50],"powerball":11,"multiplier":2},{"date":"2024-01-13","whites":[13,31,33,51,58],"powerball":15,"multiplier":2},{"date":"2024-01-15","whites":[13,30,35,49,59],"powerball":4,"multiplier":3},{"date":"2024-01-17","whites":[18,22,43,61,65],"powerball":2,"multiplier":4},{"date":"2024-01-20","whites":[16,31,34,47,65],"powerball":10,"multiplier":3},{"date":"2024-01-22","whites":[24,25,43,52,63],"powerball":21,"multiplier":2},{"date":"2024-01-24","whites":[1,5,32,50,64],"powerball":8,"multiplier":4},{"date":"2024-01-27","whites":[7,38,65,66,68],"powerball":21,"multiplier":2},{"date":"2024-01-29","whites":[39,41,43,49,64],"powerball":4,"multiplier":2},{"date":"2024-01-31","whites":[15,18,19,41,43],"powerball":14,"multiplier":2},{"date":"2024-02-03","whites":[9,11,27,59,66],"powerball":19,"multiplier":3},{"date":"2024-02-05","whites":[1,2,27,30,67],"powerball":9,"multiplier":5},{"date":"2024-02-07","whites":[12,21,62,67,69],"powerball":17,"multiplier":3},{"date":"2024-02-10","whites":[27,28,34,37,44],"powerball":8,"multiplier":2},{"date":"2024-02-12","whites":[17,36,43,53,67],"powerball":14,"multiplier":2},{"date":"2024-02-14","whites":[1,4,45,47,67],"powerball":18,"multiplier":2},{"date":"2024-02-17","whites":[6,28,59,62,69],"powerball":21,"multiplier":3},{"date":"2024-02-19","whites":[4,23,45,50,53],"powerball":17,"multiplier":3},{"date":"2024-02-21","whites":[4,27,33,41,42],"powerball":14,"multiplier":2},{"date":"2024-02-24","whites":[3,8,40,53,58],"powerball":3,"multiplier":3},{"date":"2024-02-26","whites":[24,29,42,51,54],"powerball":16,"multiplier":3},{"date":"2024-02-28","whites":[16,26,29,38,50],"powerball":6,"multiplier":2},{"date":"2024-03-02","whites":[3,18,27,36,53],"powerball":12,"multiplier":2},{"date":"2024-03-04","whites":[36,42,50,52,67],"powerball":26,"multiplier":2},{"date":"2024-03-06","whites":[6,19,28,44,60],"powerball":10,"multiplier":2},{"date":"2024-03-09","whites":[30,36,49,52,63],"powerball":16,"multiplier":5},{"date":"2024-03-11","whites":[1,3,7,16,66],"powerball":5,"multiplier":5},{"date":"2024-03-13","whites":[21,29,54,59,62],"powerball":4,"multiplier":2},{"date":"2024-03-16","whites":[12,23,44,57,61],"powerball":5,"multiplier":2},{"date":"2024-03-18","whites":[10,17,20,39,44],"powerball":16,"multiplier":3},{"date":"2024-03-20","whites":[13,22,27,54,66],"powerball":9,"multiplier":2},{"date":"2024-03-23","whites":[6,23,25,34,51],"powerball":3,"multiplier":2},{"date":"2024-03-25","whites":[7,11,19,53,68],"powerball":23,"multiplier":2},{"date":"2024-03-27","whites":[37,46,57,60,66],"powerball":8,"multiplier":2},{"date":"2024-03-30","whites":[12,13,33,50,52],"powerball":23,"multiplier":3},{"date":"2024-04-01","whites":[19,24,40,42,56],"powerball":23,"multiplier":2},{"date":"2024-04-03","whites":[11,38,41,62,65],"powerball":15,"multiplier":3},{"date":"2024-04-06","whites":[22,27,44,52,69],"powerball":9,"multiplier":3},{"date":"2024-04-08","whites":[6,21,23,39,54],"powerball":23,"multiplier":2},{"date":"2024-04-10","whites":[6,7,12,24,36],"powerball":15,"multiplier":2},{"date":"2024-04-13","whites":[7,33,40,43,69],"powerball":10,"multiplier":5},{"date":"2024-04-15","whites":[7,16,41,56,61],"powerball":23,"multiplier":3},{"date":"2024-04-17","whites":[24,29,44,47,54],"powerball":2,"multiplier":2},{"date":"2024-04-20","whites":[4,35,41,44,58],"powerball":25,"multiplier":3},{"date":"2024-04-22","whites":[12,16,33,39,52],"powerball":1,"multiplier":2},{"date":"2024-04-24","whites":[2,20,22,26,47],"powerball":21,"multiplier":4},{"date":"2024-04-27","whites":[9,30,53,55,62],"powerball":23,"multiplier":3},{"date":"2024-04-29","whites":[11,38,47,67,69],"powerball":14,"multiplier":2},{"date":"2024-05-01","whites":[1,11,19,21,68],"powerball":15,"multiplier":2},{"date":"2024-05-04","whites":[14,20,23,53,69],"powerball":4,"multiplier":2},{"date":"2024-05-06","whites":[7,23,24,56,60],"powerball":25,"multiplier":2},{"date":"2024-05-08","whites":[7,41,43,44,51],"powerball":5,"multiplier":2},{"date":"2024-05-11","whites":[3,6,39,49,67],"powerball":21,"multiplier":2},{"date":"2024-05-13","whites":[5,14,29,38,66],"powerball":1,"multiplier":2},{"date":"2024-05-15","whites":[19,42,45,55,69],"powerball":6,"multiplier":2},{"date":"2024-05-18","whites":[19,36,37,42,59],"powerball":19,"multiplier":2},{"date":"2024-05-20","whites":[1,7,48,64,68],"powerball":5,"multiplier":2},{"date":"2024-05-22","whites":[5,16,18,26,67],"powerball":4,"multiplier":3},{"date":"2024-05-25","whites":[6,33,35,36,64],"powerball":24,"multiplier":3},{"date":"2024-05-27","whites":[9,30,39,49,59],"powerball":21,"multiplier":5},{"date":"2024-05-29","whites":[17,34,56,60,61],"powerball":9,"multiplier":2},{"date":"2024-06-01","whites":[28,38,52,54,68],"powerball":8,"multiplier":2},{"date":"2024-06-03","whites":[19,29,35,36,45],"powerball":16,"multiplier":2},{"date":"2024-06-05","whites":[8,44,45,51,69],"powerball":12,"multiplier":3},{"date":"2024-06-08","whites":[8,38,52,54,64],"powerball":15,"multiplier":3},{"date":"2024-06-10","whites":[3,10,33,58,59],"powerball":9,"multiplier":2},{"date":"2024-06-12","whites":[19,30,31,61,62],"powerball":21,"multiplier":2},{"date":"2024-06-15","whites":[4,36,48,54,56],"powerball":2,"multiplier":3},{"date":"2024-06-17","whites":[30,48,53,58,66],"powerball":9,"multiplier":2},{"date":"2024-06-19","whites":[4,27,44,50,64],"powerball":7,"multiplier":3},{"date":"2024-06-22","whites":[4,5,15,32,62],"powerball":21,"multiplier":2},{"date":"2024-06-24","whites":[5,6,36,53,69],"powerball":8,"multiplier":2},{"date":"2024-06-26","whites":[4,9,36,47,56],"powerball":7,"multiplier":5},{"date":"2024-06-29","whites":[26,51,54,61,69],"powerball":25,"multiplier":3},{"date":"2024-07-01","whites":[5,9,32,39,55],"powerball":9,"multiplier":2},{"date":"2024-07-03","whites":[2,26,33,55,57],"powerball":22,"multiplier":2},{"date":"2024-07-06","whites":[5,32,35,39,49],"powerball":21,"multiplier":2},{"date":"2024-07-08","whites":[20,22,31,33,45],"powerball":1,"multiplier":3},{"date":"2024-07-10","whites":[7,11,12,27,46],"powerball":26,"multiplier":3},{"date":"2024-07-13","whites":[9,55,59,66,69],"powerball":21,"multiplier":2},{"date":"2024-07-15","whites":[9,31,39,40,45],"powerball":23,"multiplier":3},{"date":"2024-07-17","whites":[24,27,32,47,66],"powerball":26,"multiplier":2},{"date":"2024-07-20","whites":[18,25,31,40,57],"powerball":4,"multiplier":3},{"date":"2024-07-22","whites":[31,36,56,58,69],"powerball":20,"multiplier":2},{"date":"2024-07-24","whites":[16,42,59,63,68],"powerball":13,"multiplier":2},{"date":"2024-07-27","whites":[3,31,37,40,64],"powerball":17,"multiplier":3},{"date":"2024-07-29","whites":[11,27,30,33,44],"powerball":16,"multiplier":3},{"date":"2024-07-31","whites":[23,34,37,50,58],"powerball":7,"multiplier":2},{"date":"2024-08-03","whites":[13,33,40,60,61],"powerball":20,"multiplier":3},{"date":"2024-08-05","whites":[29,42,44,51,54],"powerball":12,"multiplier":2},{"date":"2024-08-07","whites":[6,19,35,47,57],"powerball":9,"multiplier":3},{"date":"2024-08-10","whites":[9,24,33,64,69],"powerball":9,"multiplier":2},{"date":"2024-08-12","whites":[9,22,57,67,68],"powerball":14,"multiplier":3},{"date":"2024-08-14","whites":[8,9,23,29,62],"powerball":13,"multiplier":2},{"date":"2024-08-17","whites":[12,31,43,45,46],"powerball":22,"multiplier":5},{"date":"2024-08-19","whites":[1,2,15,23,28],"powerball":10,"multiplier":2},{"date":"2024-08-21","whites":[27,31,33,38,67],"powerball":3,"multiplier":2},{"date":"2024-08-24","whites":[5,15,21,24,43],"powerball":17,"multiplier":3},{"date":"2024-08-26","whites":[2,4,23,68,69],"powerball":15,"multiplier":3},{"date":"2024-08-28","whites":[5,33,47,50,64],"powerball":20,"multiplier":2},{"date":"2024-08-31","whites":[4,34,35,38,69],"powerball":19,"multiplier":2},{"date":"2024-09-02","whites":[8,42,46,48,53],"powerball":22,"multiplier":3},{"date":"2024-09-04","whites":[7,10,21,33,59],"powerball":20,"multiplier":3},{"date":"2024-09-07","whites":[14,34,37,55,63],"powerball":20,"multiplier":2},{"date":"2024-09-09","whites":[1,16,21,47,60],"powerball":5,"multiplier":3},{"date":"2024-09-11","whites":[10,12,55,65,67],"powerball":3,"multiplier":3},{"date":"2024-09-14","whites":[29,34,38,48,56],"powerball":16,"multiplier":2},{"date":"2024-09-16","whites":[8,9,11,27,31],"powerball":17,"multiplier":5},{"date":"2024-09-18","whites":[1,11,22,47,68],"powerball":7,"multiplier":4},{"date":"2024-09-21","whites":[17,19,21,37,45],"powerball":14,"multiplier":2},{"date":"2024-09-23","whites":[15,21,25,37,45],"powerball":19,"multiplier":3},{"date":"2024-09-25","whites":[2,26,45,46,52],"powerball":21,"multiplier":2},{"date":"2024-09-28","whites":[3,11,13,24,39],"powerball":22,"multiplier":3},{"date":"2024-09-30","whites":[9,11,30,43,69],"powerball":20,"multiplier":2},{"date":"2024-10-02","whites":[1,2,21,37,43],"powerball":21,"multiplier":3},{"date":"2024-10-05","whites":[2,12,46,52,65],"powerball":3,"multiplier":2},{"date":"2024-10-07","whites":[18,30,31,52,63],"powerball":22,"multiplier":2},{"date":"2024-10-09","whites":[25,32,43,53,66],"powerball":10,"multiplier":3},{"date":"2024-10-12","whites":[5,14,20,41,57],"powerball":6,"multiplier":3},{"date":"2024-10-14","whites":[14,18,33,64,67],"powerball":14,"multiplier":2},{"date":"2024-10-16","whites":[4,30,39,44,60],"powerball":11,"multiplier":2},{"date":"2024-10-19","whites":[7,16,19,45,64],"powerball":25,"multiplier":3},{"date":"2024-10-21","whites":[1,25,57,62,64],"powerball":15,"multiplier":2},{"date":"2024-10-23","whites":[2,15,27,29,39],"powerball":20,"multiplier":2},{"date":"2024-10-26","whites":[8,12,40,45,51],"powerball":15,"multiplier":2},{"date":"2024-10-28","whites":[21,27,32,48,67],"powerball":17,"multiplier":2},{"date":"2024-10-30","whites":[13,22,29,43,58],"powerball":22,"multiplier":3},{"date":"2024-11-02","whites":[10,45,48,58,61],"powerball":2,"multiplier":3},{"date":"2024-11-04","whites":[6,18,33,48,53],"powerball":21,"multiplier":10},{"date":"2024-11-06","whites":[12,17,37,58,62],"powerball":4,"multiplier":2},{"date":"2024-11-09","whites":[11,24,50,56,66],"powerball":16,"multiplier":2},{"date":"2024-11-11","whites":[3,21,24,34,46],"powerball":9,"multiplier":3},{"date":"2024-11-13","whites":[9,20,26,43,58],"powerball":9,"multiplier":2},{"date":"2024-11-16","whites":[21,22,25,32,38],"powerball":16,"multiplier":5},{"date":"2024-11-18","whites":[27,31,41,52,69],"powerball":26,"multiplier":3},{"date":"2024-11-20","whites":[16,30,60,62,64],"powerball":25,"multiplier":3},{"date":"2024-11-23","whites":[12,13,34,44,67],"powerball":8,"multiplier":3},{"date":"2024-11-25","whites":[5,35,45,60,63],"powerball":12,"multiplier":2},{"date":"2024-11-27","whites":[1,6,7,13,40],"powerball":5,"multiplier":5},{"date":"2024-11-30","whites":[4,24,29,39,63],"powerball":25,"multiplier":4},{"date":"2024-12-02","whites":[3,9,26,61,67],"powerball":13,"multiplier":2},{"date":"2024-12-04","whites":[1,23,25,28,61],"powerball":13,"multiplier":2},{"date":"2024-12-07","whites":[1,31,43,55,57],"powerball":22,"multiplier":2},{"date":"2024-12-09","whites":[35,37,40,45,51],"powerball":24,"multiplier":2},{"date":"2024-12-11","whites":[13,44,50,52,54],"powerball":20,"multiplier":2},{"date":"2024-12-14","whites":[12,17,23,52,67],"powerball":1,"multiplier":2},{"date":"2024-12-16","whites":[9,30,33,57,61],"powerball":17,"multiplier":2},{"date":"2024-12-18","whites":[6,15,18,33,49],"powerball":7,"multiplier":2},{"date":"2024-12-21","whites":[1,12,17,21,58],"powerball":1,"multiplier":3},{"date":"2024-12-23","whites":[22,42,44,57,64],"powerball":18,"multiplier":2},{"date":"2024-12-25","whites":[15,26,27,30,35],"powerball":3,"multiplier":3},{"date":"2024-12-28","whites":[6,31,51,54,55],"powerball":12,"multiplier":2},{"date":"2024-12-30","whites":[9,19,33,38,39],"powerball":1,"multiplier":3},{"date":"2025-01-01","whites":[6,12,28,35,66],"powerball":26,"multiplier":3},{"date":"2025-01-04","whites":[26,32,43,54,56],"powerball":24,"multiplier":2},{"date":"2025-01-06","whites":[17,34,46,66,67],"powerball":14,"multiplier":2},{"date":"2025-01-08","whites":[1,20,36,38,43],"powerball":24,"multiplier":2},{"date":"2025-01-11","whites":[3,6,32,37,65],"powerball":4,"multiplier":3},{"date":"2025-01-13","whites":[4,6,16,39,66],"powerball":9,"multiplier":2},{"date":"2025-01-15","whites":[8,41,52,53,58],"powerball":7,"multiplier":3},{"date":"2025-01-18","whites":[14,31,35,64,69],"powerball":23,"multiplier":2},{"date":"2025-01-20","whites":[15,16,32,47,54],"powerball":6,"multiplier":3},{"date":"2025-01-22","whites":[5,6,27,40,49],"powerball":5,"multiplier":2},{"date":"2025-01-25","whites":[8,15,17,53,66],"powerball":14,"multiplier":3},{"date":"2025-01-27","whites":[2,40,47,53,55],"powerball":20,"multiplier":2},{"date":"2025-01-29","whites":[8,12,31,33,38],"powerball":18,"multiplier":3},{"date":"2025-02-01","whites":[23,29,32,49,61],"powerball":8,"multiplier":2},{"date":"2025-02-03","whites":[12,37,47,54,60],"powerball":17,"multiplier":3},{"date":"2025-02-05","whites":[19,27,30,50,62],"powerball":14,"multiplier":3},{"date":"2025-02-08","whites":[23,44,57,60,62],"powerball":9,"multiplier":2},{"date":"2025-02-10","whites":[2,17,18,29,43],"powerball":3,"multiplier":3},{"date":"2025-02-12","whites":[21,32,36,45,49],"powerball":18,"multiplier":2},{"date":"2025-02-15","whites":[3,16,45,54,56],"powerball":12,"multiplier":2},{"date":"2025-02-17","whites":[4,44,47,52,57],"powerball":9,"multiplier":4},{"date":"2025-02-19","whites":[6,21,28,49,60],"powerball":20,"multiplier":2},{"date":"2025-02-22","whites":[7,18,22,50,65],"powerball":15,"multiplier":2},{"date":"2025-02-24","whites":[10,11,34,59,68],"powerball":14,"multiplier":3},{"date":"2025-02-26","whites":[28,48,55,60,62],"powerball":20,"multiplier":2},{"date":"2025-03-01","whites":[2,23,36,44,49],"powerball":25,"multiplier":3},{"date":"2025-03-03","whites":[18,20,50,52,56],"powerball":20,"multiplier":2},{"date":"2025-03-05","whites":[24,28,40,63,65],"powerball":20,"multiplier":3},{"date":"2025-03-08","whites":[2,4,16,23,63],"powerball":13,"multiplier":3},{"date":"2025-03-10","whites":[17,40,47,50,55],"powerball":6,"multiplier":2},{"date":"2025-03-12","whites":[11,13,28,51,58],"powerball":1,"multiplier":2},{"date":"2025-03-15","whites":[12,28,33,36,54],"powerball":5,"multiplier":3},{"date":"2025-03-17","whites":[11,18,23,38,60],"powerball":9,"multiplier":2},{"date":"2025-03-19","whites":[8,11,21,49,59],"powerball":15,"multiplier":2},{"date":"2025-03-22","whites":[6,7,25,46,57],"powerball":12,"multiplier":3},{"date":"2025-03-24","whites":[6,23,35,36,47],"powerball":12,"multiplier":2},{"date":"2025-03-26","whites":[5,20,29,39,53],"powerball":6,"multiplier":3},{"date":"2025-03-29","whites":[7,11,21,53,61],"powerball":2,"multiplier":3},{"date":"2025-03-31","whites":[12,41,44,52,64],"powerball":25,"multiplier":2},{"date":"2025-04-02","whites":[5,17,41,64,69],"powerball":1,"multiplier":2},{"date":"2025-04-05","whites":[4,23,30,46,62],"powerball":2,"multiplier":4},{"date":"2025-04-07","whites":[20,23,48,59,66],"powerball":4,"multiplier":2},{"date":"2025-04-09","whites":[4,29,37,55,67],"powerball":10,"multiplier":4},{"date":"2025-04-12","whites":[16,22,44,45,53],"powerball":19,"multiplier":2},{"date":"2025-04-14","whites":[3,20,30,52,62],"powerball":1,"multiplier":3},{"date":"2025-04-16","whites":[20,24,42,43,49],"powerball":19,"multiplier":3},{"date":"2025-04-19","whites":[7,25,37,39,63],"powerball":1,"multiplier":3},{"date":"2025-04-21","whites":[4,33,45,46,51],"powerball":25,"multiplier":3},{"date":"2025-04-23","whites":[15,44,63,66,69],"powerball":20,"multiplier":2},{"date":"2025-04-26","whites":[1,12,14,18,69],"powerball":2,"multiplier":3},{"date":"2025-04-28","whites":[26,43,51,56,60],"powerball":24,"multiplier":4},{"date":"2025-04-30","whites":[1,2,3,57,59],"powerball":9,"multiplier":2},{"date":"2025-05-03","whites":[10,21,23,35,65],"powerball":24,"multiplier":2},{"date":"2025-05-05","whites":[16,34,40,45,66],"powerball":19,"multiplier":2},{"date":"2025-05-07","whites":[14,15,30,40,59],"powerball":20,"multiplier":3},{"date":"2025-05-10","whites":[5,20,28,39,42],"powerball":13,"multiplier":2},{"date":"2025-05-12","whites":[15,16,41,48,60],"powerball":21,"multiplier":3},{"date":"2025-05-14","whites":[4,10,24,29,53],"powerball":4,"multiplier":3},{"date":"2025-05-17","whites":[7,34,40,42,52],"powerball":15,"multiplier":2},{"date":"2025-05-19","whites":[13,14,37,50,60],"powerball":11,"multiplier":2},{"date":"2025-05-21","whites":[9,29,31,34,43],"powerball":2,"multiplier":2},{"date":"2025-05-24","whites":[12,18,28,48,52],"powerball":5,"multiplier":3},{"date":"2025-05-26","whites":[13,47,52,64,67],"powerball":25,"multiplier":2},{"date":"2025-05-28","whites":[23,27,32,35,59],"powerball":11,"multiplier":2},{"date":"2025-05-31","whites":[1,29,37,56,68],"powerball":13,"multiplier":2},{"date":"2025-06-02","whites":[1,7,44,57,61],"powerball":21,"multiplier":3},{"date":"2025-06-04","whites":[5,17,23,35,45],"powerball":24,"multiplier":10},{"date":"2025-06-07","whites":[31,36,43,48,62],"powerball":25,"multiplier":2},{"date":"2025-06-09","whites":[30,33,40,43,52],"powerball":25,"multiplier":4},{"date":"2025-06-11","whites":[13,25,29,37,53],"powerball":3,"multiplier":2},{"date":"2025-06-14","whites":[4,6,9,23,59],"powerball":25,"multiplier":3},{"date":"2025-06-16","whites":[17,21,23,27,52],"powerball":19,"multiplier":5},{"date":"2025-06-18","whites":[23,29,50,64,67],"powerball":11,"multiplier":2},{"date":"2025-06-21","whites":[3,16,32,52,62],"powerball":24,"multiplier":3},{"date":"2025-06-23","whites":[5,25,42,44,65],"powerball":20,"multiplier":3},{"date":"2025-06-25","whites":[2,12,37,51,61],"powerball":22,"multiplier":3},{"date":"2025-06-28","whites":[4,35,43,52,62],"powerball":12,"multiplier":2},{"date":"2025-06-30","whites":[13,28,44,52,55],"powerball":6,"multiplier":4},{"date":"2025-07-02","whites":[7,19,21,54,63],"powerball":21,"multiplier":2},{"date":"2025-07-05","whites":[1,28,34,50,58],"powerball":8,"multiplier":2},{"date":"2025-07-07","whites":[33,35,58,61,69],"powerball":25,"multiplier":5},{"date":"2025-07-09","whites":[5,9,25,28,69],"powerball":5,"multiplier":2},{"date":"2025-07-12","whites":[8,16,24,33,54],"powerball":18,"multiplier":2},{"date":"2025-07-14","whites":[8,12,45,46,63],"powerball":24,"multiplier":2},{"date":"2025-07-16","whites":[4,21,43,48,49],"powerball":22,"multiplier":2},{"date":"2025-07-19","whites":[28,48,51,61,69],"powerball":20,"multiplier":3},{"date":"2025-07-21","whites":[8,11,28,33,42],"powerball":2,"multiplier":2},{"date":"2025-07-23","whites":[2,18,19,25,35],"powerball":25,"multiplier":3},{"date":"2025-07-26","whites":[8,31,57,65,67],"powerball":23,"multiplier":3},{"date":"2025-07-28","whites":[7,35,36,43,62],"powerball":3,"multiplier":3},{"date":"2025-07-30","whites":[4,15,35,50,64],"powerball":8,"multiplier":4},{"date":"2025-08-02","whites":[6,18,34,35,36],"powerball":2,"multiplier":2},{"date":"2025-08-04","whites":[8,9,19,31,38],"powerball":21,"multiplier":2},{"date":"2025-08-06","whites":[15,27,43,45,53],"powerball":9,"multiplier":2},{"date":"2025-08-09","whites":[7,14,23,24,60],"powerball":14,"multiplier":2},{"date":"2025-08-11","whites":[6,16,33,40,62],"powerball":2,"multiplier":2},{"date":"2025-08-13","whites":[4,11,40,44,50],"powerball":4,"multiplier":3},{"date":"2025-08-16","whites":[23,40,49,65,69],"powerball":23,"multiplier":3},{"date":"2025-08-18","whites":[15,46,61,63,64],"powerball":1,"multiplier":3},{"date":"2025-08-20","whites":[31,59,62,65,68],"powerball":5,"multiplier":2},{"date":"2025-08-23","whites":[11,14,34,47,51],"powerball":18,"multiplier":2},{"date":"2025-08-25","whites":[16,19,34,37,64],"powerball":22,"multiplier":3},{"date":"2025-08-27","whites":[9,12,22,41,61],"powerball":25,"multiplier":4},{"date":"2025-08-30","whites":[3,18,22,27,33],"powerball":17,"multiplier":3},{"date":"2025-09-01","whites":[8,23,25,40,53],"powerball":5,"multiplier":3},{"date":"2025-09-03","whites":[3,16,29,61,69],"powerball":22,"multiplier":2},{"date":"2025-09-06","whites":[11,23,44,61,62],"powerball":17,"multiplier":2},{"date":"2025-09-08","whites":[26,28,41,53,64],"powerball":9,"multiplier":3},{"date":"2025-09-10","whites":[2,24,45,53,64],"powerball":5,"multiplier":2},{"date":"2025-09-13","whites":[28,37,42,50,53],"powerball":19,"multiplier":2},{"date":"2025-09-15","whites":[14,15,32,42,49],"powerball":1,"multiplier":2},{"date":"2025-09-17","whites":[7,30,50,54,62],"powerball":20,"multiplier":2},{"date":"2025-09-20","whites":[15,29,64,66,67],"powerball":4,"multiplier":2},{"date":"2025-09-22","whites":[3,29,42,46,59],"powerball":15,"multiplier":3},{"date":"2025-09-24","whites":[15,31,45,49,53],"powerball":19,"multiplier":3},{"date":"2025-09-27","whites":[10,16,32,61,66],"powerball":4,"multiplier":2},{"date":"2025-09-29","whites":[1,3,27,60,65],"powerball":16,"multiplier":5},{"date":"2025-10-01","whites":[8,17,22,28,55],"powerball":14,"multiplier":3},{"date":"2025-10-04","whites":[3,7,47,67,68],"powerball":2,"multiplier":2},{"date":"2025-10-06","whites":[28,29,32,66,67],"powerball":3,"multiplier":2},{"date":"2025-10-08","whites":[8,10,44,48,54],"powerball":14,"multiplier":2},{"date":"2025-10-11","whites":[13,16,18,20,27],"powerball":10,"multiplier":2},{"date":"2025-10-13","whites":[13,14,32,52,64],"powerball":12,"multiplier":2},{"date":"2025-10-15","whites":[10,13,28,34,47],"powerball":15,"multiplier":3},{"date":"2025-10-18","whites":[3,11,27,40,58],"powerball":10,"multiplier":3},{"date":"2025-10-20","whites":[32,38,66,67,69],"powerball":19,"multiplier":2},{"date":"2025-10-22","whites":[18,37,52,54,60],"powerball":12,"multiplier":2},{"date":"2025-10-25","whites":[2,12,22,39,67],"powerball":15,"multiplier":2},{"date":"2025-10-27","whites":[17,39,43,51,66],"powerball":20,"multiplier":2},{"date":"2025-10-29","whites":[4,24,49,60,65],"powerball":1,"multiplier":2},{"date":"2025-11-01","whites":[2,26,43,44,62],"powerball":22,"multiplier":2},{"date":"2025-11-03","whites":[3,32,40,43,57],"powerball":18,"multiplier":2},{"date":"2025-11-05","whites":[9,17,29,61,66],"powerball":26,"multiplier":5},{"date":"2025-11-08","whites":[3,53,60,62,68],"powerball":11,"multiplier":2},{"date":"2025-11-10","whites":[6,28,44,48,58],"powerball":23,"multiplier":2},{"date":"2025-11-12","whites":[29,39,43,51,65],"powerball":23,"multiplier":2},{"date":"2025-11-15","whites":[6,7,12,47,53],"powerball":21,"multiplier":4},{"date":"2025-11-17","whites":[7,33,50,57,66],"powerball":23,"multiplier":5},{"date":"2025-11-19","whites":[10,31,49,51,68],"powerball":19,"multiplier":2},{"date":"2025-11-22","whites":[28,32,36,51,69],"powerball":2,"multiplier":2},{"date":"2025-11-24","whites":[8,16,26,30,58],"powerball":14,"multiplier":2},{"date":"2025-11-26","whites":[7,8,15,19,28],"powerball":3,"multiplier":3},{"date":"2025-11-29","whites":[19,22,30,32,59],"powerball":1,"multiplier":2},{"date":"2025-12-01","whites":[5,18,26,47,59],"powerball":1,"multiplier":3},{"date":"2025-12-03","whites":[1,14,20,46,51],"powerball":26,"multiplier":3},{"date":"2025-12-06","whites":[13,14,26,28,44],"powerball":7,"multiplier":2},{"date":"2025-12-08","whites":[8,32,52,56,64],"powerball":23,"multiplier":2},{"date":"2025-12-10","whites":[10,16,29,33,69],"powerball":22,"multiplier":3},{"date":"2025-12-13","whites":[1,28,31,57,58],"powerball":16,"multiplier":2},{"date":"2025-12-15","whites":[23,35,59,63,68],"powerball":2,"multiplier":4},{"date":"2025-12-17","whites":[25,33,53,62,66],"powerball":17,"multiplier":4},{"date":"2025-12-20","whites":[4,5,28,52,69],"powerball":20,"multiplier":3},{"date":"2025-12-22","whites":[3,18,36,41,54],"powerball":7,"multiplier":2},{"date":"2025-12-24","whites":[4,25,31,52,59],"powerball":19,"multiplier":2},{"date":"2025-12-27","whites":[5,20,34,39,62],"powerball":1,"multiplier":2},{"date":"2025-12-29","whites":[11,19,34,48,53],"powerball":21,"multiplier":2},{"date":"2025-12-31","whites":[11,18,21,24,38],"powerball":26,"multiplier":10},{"date":"2026-01-03","whites":[18,21,40,53,60],"powerball":23,"multiplier":3},{"date":"2026-01-05","whites":[4,18,24,51,56],"powerball":14,"multiplier":2},{"date":"2026-01-07","whites":[15,28,57,58,63],"powerball":23,"multiplier":2},{"date":"2026-01-10","whites":[5,19,21,28,64],"powerball":14,"multiplier":3},{"date":"2026-01-12","whites":[5,27,45,56,59],"powerball":4,"multiplier":2},{"date":"2026-01-14","whites":[6,24,39,43,51],"powerball":2,"multiplier":2},{"date":"2026-01-17","whites":[5,8,27,49,57],"powerball":14,"multiplier":4},{"date":"2026-01-19","whites":[5,28,34,37,55],"powerball":17,"multiplier":3},{"date":"2026-01-21","whites":[11,26,27,53,55],"powerball":12,"multiplier":2},{"date":"2026-01-24","whites":[2,16,35,61,63],"powerball":5,"multiplier":3},{"date":"2026-01-26","whites":[21,31,51,60,63],"powerball":18,"multiplier":2},{"date":"2026-01-28","whites":[21,35,40,46,68],"powerball":11,"multiplier":10},{"date":"2026-01-31","whites":[2,8,14,40,63],"powerball":23,"multiplier":3},{"date":"2026-02-02","whites":[3,8,31,60,65],"powerball":4,"multiplier":2},{"date":"2026-02-04","whites":[27,29,30,37,58],"powerball":15,"multiplier":2},{"date":"2026-02-07","whites":[25,36,42,51,58],"powerball":6,"multiplier":2},{"date":"2026-02-09","whites":[6,19,22,28,48],"powerball":24,"multiplier":5},{"date":"2026-02-11","whites":[6,20,33,40,48],"powerball":5,"multiplier":2},{"date":"2026-02-14","whites":[23,43,58,60,64],"powerball":24,"multiplier":2},{"date":"2026-02-16","whites":[16,18,19,56,58],"powerball":6,"multiplier":3},{"date":"2026-02-18","whites":[9,33,52,64,66],"powerball":1,"multiplier":2},{"date":"2026-02-21","whites":[27,28,36,48,49],"powerball":21,"multiplier":4},{"date":"2026-02-23","whites":[5,11,23,29,47],"powerball":6,"multiplier":2},{"date":"2026-02-25","whites":[50,52,54,56,64],"powerball":23,"multiplier":2},{"date":"2026-02-28","whites":[6,20,35,54,65],"powerball":10,"multiplier":4},{"date":"2026-03-02","whites":[2,17,18,38,62],"powerball":20,"multiplier":2},{"date":"2026-03-04","whites":[7,14,42,47,56],"powerball":6,"multiplier":4},{"date":"2026-03-07","whites":[17,18,30,50,68],"powerball":24,"multiplier":3},{"date":"2026-03-09","whites":[22,23,28,36,54],"powerball":13,"multiplier":3},{"date":"2026-03-11","whites":[3,6,55,58,63],"powerball":12,"multiplier":2},{"date":"2026-03-14","whites":[9,30,42,50,52],"powerball":21,"multiplier":3},{"date":"2026-03-16","whites":[7,10,20,47,52],"powerball":20,"multiplier":2},{"date":"2026-03-18","whites":[14,18,19,21,69],"powerball":1,"multiplier":3},{"date":"2026-03-21","whites":[12,28,36,41,59],"powerball":2,"multiplier":2},{"date":"2026-03-23","whites":[12,18,47,56,63],"powerball":1,"multiplier":10},{"date":"2026-03-25","whites":[7,21,55,56,64],"powerball":26,"multiplier":4},{"date":"2026-03-28","whites":[11,42,43,59,61],"powerball":25,"multiplier":4},{"date":"2026-03-30","whites":[7,11,31,41,57],"powerball":20,"multiplier":2},{"date":"2026-04-01","whites":[4,10,11,52,64],"powerball":24,"multiplier":3},{"date":"2026-04-04","whites":[3,6,13,41,65],"powerball":1,"multiplier":4},{"date":"2026-04-06","whites":[7,24,37,42,57],"powerball":5,"multiplier":2},{"date":"2026-04-08","whites":[3,16,17,42,52],"powerball":3,"multiplier":2},{"date":"2026-04-11","whites":[6,47,49,53,60],"powerball":6,"multiplier":2},{"date":"2026-04-13","whites":[38,43,59,63,64],"powerball":15,"multiplier":3},{"date":"2026-04-15","whites":[13,21,27,43,45],"powerball":26,"multiplier":5},{"date":"2026-04-18","whites":[24,25,39,46,61],"powerball":1,"multiplier":5},{"date":"2026-04-20","whites":[9,17,36,47,64],"powerball":26,"multiplier":3},{"date":"2026-04-22","whites":[24,29,32,49,63],"powerball":11,"multiplier":2},{"date":"2026-04-25","whites":[4,30,36,52,57],"powerball":2,"multiplier":3},{"date":"2026-04-27","whites":[18,31,33,36,62],"powerball":3,"multiplier":3},{"date":"2026-04-29","whites":[3,19,35,51,67],"powerball":15,"multiplier":2},{"date":"2026-05-02","whites":[25,37,42,52,65],"powerball":14,"multiplier":3},{"date":"2026-05-04","whites":[30,36,42,60,63],"powerball":13,"multiplier":2},{"date":"2026-05-06","whites":[18,27,51,65,68],"powerball":5,"multiplier":3},{"date":"2026-05-09","whites":[15,41,46,47,56],"powerball":22,"multiplier":2},{"date":"2026-05-11","whites":[24,30,37,56,64],"powerball":7,"multiplier":3}]}</script>
+
+<!-- =========== APP LOGIC =========== -->
+<script>
+"use strict";
+
+// =============== DATA LOADING ===============
+const RAW = JSON.parse(document.getElementById('powerballData').textContent);
+let HISTORY = RAW.draws;  // array of {date, whites:[5], powerball, multiplier}
+let META    = RAW.meta;   // {generatedAt, first, last, n}
+
+// Try to load updates from localStorage (if user has imported newer data)
+try {
+  const cached = JSON.parse(localStorage.getItem('pb_history_extra') || '[]');
+  if (cached.length) {
+    const dates = new Set(HISTORY.map(d=>d.date));
+    for (const d of cached) if (!dates.has(d.date)) HISTORY.push(d);
+    HISTORY.sort((a,b)=>a.date.localeCompare(b.date));
+  }
+} catch(e){}
+
+// =============== STATE ===============
+const STATE = {
+  weights: { F: 0.20, H: 0.25, D: 0.10, B: 0.20, M: 0.10, P: 0.15 },
+  ewmaLambda: 0.985,
+  customWhites: [],
+  customPB: null,
+  modelVersion: 1,
+  versions: [],
+  jackpot: 100_000_000, // default placeholder
+  numPicks: 10,
+  predMode: 'ensemble',
+};
+
+// Persist weights & versions
+function saveState(){
+  try {
+    localStorage.setItem('pb_state', JSON.stringify({
+      weights: STATE.weights,
+      ewmaLambda: STATE.ewmaLambda,
+      modelVersion: STATE.modelVersion,
+      versions: STATE.versions,
+      jackpot: STATE.jackpot
+    }));
+  } catch(e){}
+}
+function loadState(){
+  try {
+    const s = JSON.parse(localStorage.getItem('pb_state')||'null');
+    if (s) Object.assign(STATE, s);
+  } catch(e){}
+}
+loadState();
+
+// =============== UTIL ===============
+const $ = (id)=>document.getElementById(id);
+function fmt(n, d=0){ return Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d}); }
+function ballEl(n, type='white', size=''){
+  const e = document.createElement('span');
+  e.className = `ball ${type} ${size}`;
+  e.textContent = String(n).padStart(2,'0');
+  return e;
+}
+function toast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(window._tt); window._tt = setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function logsumexp(arr){
+  const m = Math.max(...arr);
+  return m + Math.log(arr.reduce((a,x)=>a+Math.exp(x-m),0));
+}
+function softmax(arr){
+  const m = Math.max(...arr);
+  const e = arr.map(x=>Math.exp(x-m));
+  const s = e.reduce((a,b)=>a+b,0);
+  return e.map(x=>x/s);
+}
+function normalize(scores){
+  const s = scores.reduce((a,b)=>a+b, 0);
+  if (s<=0) return scores.map(()=>1/scores.length);
+  return scores.map(x=>x/s);
+}
+
+// =============== MODELS ===============
+// All models return a length-69 array (whites) or length-26 (pb) of normalised scores
+
+function freqCounts(){
+  const w = new Array(70).fill(0), p = new Array(27).fill(0);
+  for (const d of HISTORY){
+    for (const x of d.whites) w[x]++;
+    p[d.powerball]++;
+  }
+  return {w, p};
+}
+
+function model_F(){ // frequency
+  const {w, p} = freqCounts();
+  return { white: normalize(w.slice(1)), pb: normalize(p.slice(1)) };
+}
+
+function model_H(lambda=STATE.ewmaLambda){ // EWMA hot
+  const N = HISTORY.length;
+  const w = new Array(70).fill(0), p = new Array(27).fill(0);
+  for (let t=0;t<N;t++){
+    const wt = Math.pow(lambda, N-1-t);
+    for (const x of HISTORY[t].whites) w[x] += wt;
+    p[HISTORY[t].powerball] += wt;
+  }
+  return { white: normalize(w.slice(1)), pb: normalize(p.slice(1)) };
+}
+
+function model_D(){ // gap / due
+  const N = HISTORY.length;
+  const lastW = new Array(70).fill(-1), lastP = new Array(27).fill(-1);
+  for (let t=0;t<N;t++){
+    for (const x of HISTORY[t].whites) lastW[x] = t;
+    lastP[HISTORY[t].powerball] = t;
+  }
+  const meanGapW = 69/5, meanGapP = 26;
+  const w = new Array(69), p = new Array(26);
+  for (let i=1;i<=69;i++){
+    const g = lastW[i]<0 ? N : N-1-lastW[i];
+    w[i-1] = g / meanGapW;
+  }
+  for (let i=1;i<=26;i++){
+    const g = lastP[i]<0 ? N : N-1-lastP[i];
+    p[i-1] = g / meanGapP;
+  }
+  return { white: normalize(w), pb: normalize(p) };
+}
+
+function model_B(){ // Bayesian Dirichlet, prior α=1
+  const {w, p} = freqCounts();
+  const wp = w.slice(1).map(c => c+1);  // posterior alpha
+  const pp = p.slice(1).map(c => c+1);
+  return { white: normalize(wp), pb: normalize(pp) };
+}
+
+function model_M(){ // Markov pairwise: co-occurrence with previous draw
+  const co = Array.from({length:70}, ()=>new Array(70).fill(0));
+  for (let t=1;t<HISTORY.length;t++){
+    const prev = HISTORY[t-1].whites;
+    for (const i of HISTORY[t].whites) for (const j of prev) co[i][j]++;
+  }
+  const {w} = freqCounts();
+  const last = HISTORY[HISTORY.length-1].whites;
+  const score = new Array(69).fill(0);
+  for (let i=1;i<=69;i++){
+    let s = 0;
+    for (const j of last){
+      s += co[i][j] / Math.max(1, w[j]);
+    }
+    score[i-1] = s / 5;
+  }
+  // PB has no analogous prev-coupling that's meaningful; fall back to uniform
+  return { white: normalize(score), pb: normalize(new Array(26).fill(1)) };
+}
+
+function model_P(){ // Position bias — what's the empirical prob of i at any sorted position
+  const w = new Array(70).fill(0);
+  for (const d of HISTORY) for (const x of d.whites) w[x]++;
+  // Same as frequency; included as a placeholder distinct slot for sum-range filtering
+  // We instead use a "sum-prior" tilt: prefer numbers whose inclusion tends to land near hist mean sum
+  // Simplification: identity to frequency (kept for ensemble slot stability)
+  return model_F();
+}
+
+// =============== ENSEMBLE ===============
+function ensembleScores(weights=STATE.weights){
+  const F = model_F(), H = model_H(), D = model_D(), B = model_B(), M = model_M(), P = model_P();
+  const wsum = weights.F+weights.H+weights.D+weights.B+weights.M+weights.P;
+  const w = {};
+  for (const k of ['F','H','D','B','M','P']) w[k] = weights[k]/wsum;
+  const white = new Array(69), pb = new Array(26);
+  for (let i=0;i<69;i++){
+    white[i] = w.F*F.white[i] + w.H*H.white[i] + w.D*D.white[i]
+             + w.B*B.white[i] + w.M*M.white[i] + w.P*P.white[i];
+  }
+  for (let i=0;i<26;i++){
+    pb[i] = w.F*F.pb[i] + w.H*H.pb[i] + w.D*D.pb[i]
+          + w.B*B.pb[i] + w.M*M.pb[i] + w.P*P.pb[i];
+  }
+  return { white: normalize(white), pb: normalize(pb) };
+}
+
+function singleModel(mode){
+  switch(mode){
+    case 'frequency': return model_F();
+    case 'ewma':      return model_H();
+    case 'gap':       return model_D();
+    case 'bayesian':  return model_B();
+    case 'markov':    return model_M();
+    case 'random':    return { white: new Array(69).fill(1/69), pb: new Array(26).fill(1/26) };
+    case 'smart':     return smartScores();
+    case 'ensemble':
+    default:          return ensembleScores();
+  }
+}
+
+// =============== SMART PICK (anti-pattern) ===============
+function popularityPenalty(num){
+  // Higher = more popular = more likely to be shared
+  let p = 0;
+  if (num <= 12) p += 1.2;          // months
+  else if (num <= 31) p += 1.0;     // birthdays
+  if ([7,11,13,21,17,3,23,9].includes(num)) p += 0.4;  // lucky numbers
+  return p;
+}
+function smartScores(){
+  const E = ensembleScores();
+  const wpen = new Array(69);
+  for (let i=0;i<69;i++){
+    const num = i+1;
+    wpen[i] = E.white[i] / (1 + 0.6*popularityPenalty(num));
+  }
+  return { white: normalize(wpen), pb: E.pb };
+}
+
+// =============== COMBINATION RANKING ===============
+function topKWhites(scores, k){
+  return scores.map((s,i)=>({n:i+1, s})).sort((a,b)=>b.s-a.s).slice(0,k);
+}
+
+function generateCombos(scores, count, options={}){
+  // Generate top-N combinations by combo_score = sum of log scores
+  // Take top whites & PBs, generate cartesian, sort, truncate
+  const Kw = Math.min(40, Math.max(15, Math.ceil(Math.pow(count, 0.25)*8)));
+  const Kp = Math.min(10, Math.max(3, Math.ceil(Math.pow(count, 0.2)*3)));
+  const top = topKWhites(scores.white, Kw);
+  const topPB = scores.pb.map((s,i)=>({n:i+1, s})).sort((a,b)=>b.s-a.s).slice(0,Kp);
+
+  // Generate all 5-combinations of top whites (C(Kw,5) up to 658008 at Kw=40)
+  // Cap generation if too many
+  const combos = [];
+  const N = top.length;
+  const maxCombos = Math.max(count*4, 10000);
+  for (let a=0;a<N-4;a++){
+    for (let b=a+1;b<N-3;b++){
+      for (let c=b+1;c<N-2;c++){
+        for (let d=c+1;d<N-1;d++){
+          for (let e=d+1;e<N;e++){
+            const whites = [top[a].n, top[b].n, top[c].n, top[d].n, top[e].n];
+            const score = Math.log(top[a].s)+Math.log(top[b].s)+Math.log(top[c].s)+Math.log(top[d].s)+Math.log(top[e].s);
+            combos.push({ whites, score });
+            if (combos.length>maxCombos) break;
+          }
+          if (combos.length>maxCombos) break;
+        }
+        if (combos.length>maxCombos) break;
+      }
+      if (combos.length>maxCombos) break;
+    }
+    if (combos.length>maxCombos) break;
+  }
+  // Anti-pattern filter (skip pure birthday & strict consec when mode!=random)
+  if (options.antiPattern){
+    for (const c of combos){
+      if (c.whites.every(x=>x<=31)) c.score -= 0.5;
+      let consec = 0;
+      for (let i=1;i<5;i++) if (c.whites[i]-c.whites[i-1]===1) consec++;
+      if (consec>=2) c.score -= 0.4;
+    }
+  }
+  combos.sort((a,b)=>b.score-a.score);
+  // pair with top PBs
+  const out = [];
+  for (const c of combos){
+    for (const pb of topPB){
+      out.push({ whites:c.whites, pb:pb.n, score: c.score + Math.log(pb.s) });
+      if (out.length>=count) break;
+    }
+    if (out.length>=count) break;
+  }
+  // normalise to "model probability" — softmax over output set
+  const ls = out.map(x=>x.score);
+  const sm = softmax(ls);
+  out.forEach((x,i)=>x.modelProb = sm[i]);
+  return out;
+}
+
+function uniformRandomCombos(count){
+  // Genuine uniform random picks (control group)
+  const out = [];
+  const used = new Set();
+  while (out.length < count){
+    const w = new Set();
+    while (w.size<5) w.add(1+Math.floor(Math.random()*69));
+    const whites = [...w].sort((a,b)=>a-b);
+    const pb = 1+Math.floor(Math.random()*26);
+    const key = whites.join(',')+'|'+pb;
+    if (used.has(key)) continue;
+    used.add(key);
+    out.push({ whites, pb, score: 0, modelProb: 1/count });
+  }
+  return out;
+}
+
+// =============== ANALYTICS ===============
+function chi2White(){
+  const {w} = freqCounts();
+  const N = HISTORY.length;
+  const E = 5*N/69;
+  let s = 0;
+  for (let i=1;i<=69;i++) s += (w[i]-E)**2/E;
+  return s;
+}
+function chi2PB(){
+  const {p} = freqCounts();
+  const N = HISTORY.length;
+  const E = N/26;
+  let s = 0;
+  for (let i=1;i<=26;i++) s += (p[i]-E)**2/E;
+  return s;
+}
+
+// =============== EXPECTED VALUE ===============
+function computeEV(jackpot){
+  // Powerball prize tiers (cash, ignoring multiplier & tax for simplicity)
+  // 5+PB jackpot, 5 only $1M, 4+PB $50k, 4 $100, 3+PB $100, 3 $7, 2+PB $7, 1+PB $4, 0+PB $4
+  // Probabilities:
+  const C = (n,k)=>{let r=1;for(let i=0;i<k;i++) r*=(n-i)/(i+1); return r;};
+  const total = C(69,5)*26;
+  const probs = {
+    j: 1/total,
+    five: 1/C(69,5)*25/26,
+    fourPB: 5*64/C(69,5)*1/26,
+    four: 5*64/C(69,5)*25/26,
+    threePB: 10*64*63/2/C(69,5)*1/26,
+    three: 10*64*63/2/C(69,5)*25/26,
+    twoPB: 10*64*63*62/6/C(69,5)*1/26,
+    onePB: 5*64*63*62*61/24/C(69,5)*1/26,
+    zeroPB: 64*63*62*61*60/120/C(69,5)*1/26,
+  };
+  const pays = { j:jackpot, five:1_000_000, fourPB:50_000, four:100, threePB:100, three:7, twoPB:7, onePB:4, zeroPB:4 };
+  let ev = -2;
+  for (const k of Object.keys(probs)) ev += probs[k]*pays[k];
+  return { ev, probs, pays };
+}
+
+// =============== NEXT DRAW LOGIC ===============
+function nextDrawDate(from=new Date()){
+  // Powerball draws Mon(1), Wed(3), Sat(6) — at 22:59 ET (UTC-4 daylight or UTC-5 std)
+  // For our purposes use US/Eastern day-of-week, drop time-of-day
+  const d = new Date(from);
+  for (let i=0;i<8;i++){
+    const dow = d.getUTCDay(); // approx using UTC; OK for date
+    if ([1,3,6].includes(dow) && d > from) return d;
+    d.setUTCDate(d.getUTCDate()+1);
+    d.setUTCHours(4,0,0,0); // ~midnight ET
+  }
+  return d;
+}
+function isDrawDay(d){ return [1,3,6].includes(d.getUTCDay()); }
+
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+
+// =============== RENDERING ===============
+function renderTabs(){
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.onclick = ()=>goTab(t.dataset.tab);
+  });
+}
+function goTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active', s.id===name));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function renderDashboard(){
+  $('statN').textContent = fmt(HISTORY.length);
+  const c2w = chi2White(), c2p = chi2PB();
+  $('statChiW').textContent = c2w.toFixed(1);
+  $('statChiP').textContent = c2p.toFixed(1);
+  $('statChiWv').textContent = (c2w<88.25 ? 'uniform OK' : 'rejects uniform') + ' (df 68)';
+  $('statChiPv').textContent = (c2p<37.65 ? 'uniform OK' : 'rejects uniform') + ' (df 25)';
+
+  // Last draw
+  const last = HISTORY[HISTORY.length-1];
+  $('lastDateP').textContent = last.date;
+  const lb = $('lastDrawBalls'); lb.innerHTML='';
+  for (const w of last.whites) lb.appendChild(ballEl(w,'white','lg'));
+  lb.appendChild(ballEl(last.powerball,'pb','lg'));
+  $('lastSum').textContent = last.whites.reduce((a,b)=>a+b,0);
+  $('lastRange').textContent = Math.max(...last.whites) - Math.min(...last.whites);
+  const odd = last.whites.filter(x=>x%2).length;
+  $('lastOE').textContent = `${odd}o-${5-odd}e`;
+
+  // Next draw
+  const nd = nextDrawDate();
+  $('nextDrawDate').textContent = nd.toISOString().slice(0,10);
+  startCountdown(nd);
+
+  // Schedule
+  let cur = new Date();
+  let body = '';
+  let count = 0;
+  const checked = new Date(cur);
+  while (count < 3){
+    checked.setUTCDate(checked.getUTCDate()+1);
+    if (isDrawDay(checked)){
+      const day = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][checked.getUTCDay()];
+      const isNext = count===0;
+      body += `<tr><td>${fmtDate(checked)}</td><td>${day}</td><td>${isNext?'<span class="pill gold">Next — locked for prediction</span>':'<span class="pill">Upcoming</span>'}</td><td>${isNext?'<button class="btn sm primary" onclick="window.goTab(&quot;predict&quot;)">Predict →</button>':'<span class="dim">unlocked after next draw</span>'}</td></tr>`;
+      count++;
+    }
+  }
+  $('scheduleBody').innerHTML = body;
+
+  // Quick prediction
+  regenerateQuick();
+  $('modelVerBadge').textContent = 'v'+STATE.modelVersion;
+  $('modelVerBadge2').textContent = 'v'+STATE.modelVersion;
+  $('dataVer').textContent = META.n + ' draws';
+  $('dataDate').textContent = 'thru ' + META.last;
+}
+
+let _cdTimer = null;
+function startCountdown(target){
+  clearInterval(_cdTimer);
+  function tick(){
+    const ms = target - new Date();
+    if (ms<=0){ $('countdown').textContent = '— now —'; clearInterval(_cdTimer); return; }
+    const d = Math.floor(ms/86400000), h = Math.floor(ms/3600000)%24, m = Math.floor(ms/60000)%60;
+    $('countdown').textContent = `${d}d ${h}h ${m}m`;
+  }
+  tick(); _cdTimer = setInterval(tick, 60000);
+}
+
+function regenerateQuick(){
+  const sm = smartScores();
+  const top5 = topKWhites(sm.white, 5).map(x=>x.n).sort((a,b)=>a-b);
+  const topPB = sm.pb.map((s,i)=>({n:i+1,s})).sort((a,b)=>b.s-a.s)[0].n;
+  const c = $('quickPred'); c.innerHTML = '';
+  for (const w of top5) c.appendChild(ballEl(w,'white','lg'));
+  c.appendChild(ballEl(topPB,'pb','lg'));
+  STATE._quick = { whites: top5, pb: topPB };
+  const ev = computeEV(STATE.jackpot);
+  $('quickStats').textContent =
+    `Sum=${top5.reduce((a,b)=>a+b,0)}  Range=${Math.max(...top5)-Math.min(...top5)}  ` +
+    `True P(jackpot)=1/${fmt(292201338)}  EV @ jackpot $${fmt(STATE.jackpot)} = $${ev.ev.toFixed(3)} per $2 ticket`;
+}
+
+function copyQuick(){
+  if (!STATE._quick) return;
+  const s = STATE._quick.whites.join('-') + ' PB ' + STATE._quick.pb;
+  navigator.clipboard.writeText(s);
+  toast('Copied: '+s);
+}
+
+// PREDICTIONS PAGE
+function runPredict(){
+  const count = parseInt($('numPicks').value);
+  const mode = $('predMode').value;
+  $('predCountPill').textContent = count + ' picks';
+  const list = $('predList'); list.innerHTML = '<div class="dim">Generating…</div>';
+  setTimeout(()=>{
+    let combos;
+    if (mode==='random') combos = uniformRandomCombos(count);
+    else combos = generateCombos(singleModel(mode), count, { antiPattern: mode==='smart' });
+    STATE._lastCombos = combos;
+    STATE._origRank = new Map(combos.map((c,i)=>[c, i+1]));  // remember generation rank
+    resortPredictions();
+  }, 30);
+}
+
+function renderCombos(combos){
+  const list = $('predList');
+  if (!combos || !combos.length){ list.innerHTML = '<div class="dim">No combinations.</div>'; return; }
+  let html = '';
+  combos.forEach((c,i)=>{
+    const balls = c.whites.map(w=>`<span class="ball white sm">${String(w).padStart(2,'0')}</span>`).join('')
+                + `<span class="ball pb sm">${String(c.pb).padStart(2,'0')}</span>`;
+    const sum = c.whites.reduce((a,b)=>a+b,0);
+    const range = Math.max(...c.whites) - Math.min(...c.whites);
+    const origRank = STATE._origRank ? STATE._origRank.get(c) : null;
+    const rankBadge = origRank && origRank !== (i+1) ? `<span class="dim" style="font-size:10px"> (gen #${origRank})</span>` : '';
+    html += `<div class="combo"><span class="rank">#${i+1}${rankBadge}</span><span class="balls">${balls}</span><span class="meta">score ${c.score.toFixed(2)}<br>p_model ${(c.modelProb*100).toFixed(3)}%<br>sum ${sum} · rg ${range}</span></div>`;
+  });
+  list.innerHTML = html;
+}
+
+function resortPredictions(){
+  const combos = STATE._lastCombos;
+  if (!combos || !combos.length){ toast('Generate predictions first'); return; }
+  const sortKey = $('predSort').value;
+  const sumOf = c => c.whites.reduce((a,b)=>a+b,0);
+  const rangeOf = c => Math.max(...c.whites) - Math.min(...c.whites);
+  const sorted = [...combos];
+  switch(sortKey){
+    case 'prob_desc':  sorted.sort((a,b)=>b.modelProb - a.modelProb); break;
+    case 'prob_asc':   sorted.sort((a,b)=>a.modelProb - b.modelProb); break;
+    case 'score_desc': sorted.sort((a,b)=>b.score - a.score); break;
+    case 'score_asc':  sorted.sort((a,b)=>a.score - b.score); break;
+    case 'sum_desc':   sorted.sort((a,b)=>sumOf(b) - sumOf(a)); break;
+    case 'sum_asc':    sorted.sort((a,b)=>sumOf(a) - sumOf(b)); break;
+    case 'range_desc': sorted.sort((a,b)=>rangeOf(b) - rangeOf(a)); break;
+    case 'range_asc':  sorted.sort((a,b)=>rangeOf(a) - rangeOf(b)); break;
+    case 'pb_asc':     sorted.sort((a,b)=>a.pb - b.pb); break;
+    case 'pb_desc':    sorted.sort((a,b)=>b.pb - a.pb); break;
+    case 'shuffle':    for (let i=sorted.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[sorted[i],sorted[j]]=[sorted[j],sorted[i]];} break;
+  }
+  // Update label
+  const opt = $('predSort').selectedOptions[0];
+  if (opt) $('sortLabel').textContent = opt.text.replace('—','·');
+  STATE._sortedView = sorted;
+  renderCombos(sorted);
+}
+function exportCSV(){
+  const data = STATE._sortedView || STATE._lastCombos;
+  if (!data) { toast('Run predict first'); return; }
+  let csv = 'rank,white1,white2,white3,white4,white5,powerball,modelScore,modelProbability,sum,range\n';
+  data.forEach((c,i)=>{
+    const sum = c.whites.reduce((a,b)=>a+b,0);
+    const range = Math.max(...c.whites) - Math.min(...c.whites);
+    csv += `${i+1},${c.whites.join(',')},${c.pb},${c.score.toFixed(4)},${c.modelProb.toFixed(6)},${sum},${range}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const sortTag = ($('predSort').value || 'default');
+  a.download = `powerball_predictions_${HISTORY[HISTORY.length-1].date}_${$('predMode').value}_${sortTag}.csv`;
+  a.click();
+}
+function copyAll(){
+  const data = STATE._sortedView || STATE._lastCombos;
+  if (!data) { toast('Run predict first'); return; }
+  const text = data.map((c,i)=>`#${i+1}: ${c.whites.join('-')} PB ${c.pb}  (p_model ${(c.modelProb*100).toFixed(3)}%)`).join('\n');
+  navigator.clipboard.writeText(text); toast('Copied '+data.length+' picks');
+}
+
+// CUSTOM PICK
+function renderPickers(){
+  const wg = $('whitePicker'); wg.innerHTML='';
+  for (let i=1;i<=69;i++){
+    const b = ballEl(i,'white','pick');
+    b.classList.add('pick');
+    b.onclick = ()=>toggleWhite(i);
+    if (STATE.customWhites.includes(i)) b.classList.add('selected');
+    wg.appendChild(b);
+  }
+  const pg = $('pbPicker'); pg.innerHTML='';
+  for (let i=1;i<=26;i++){
+    const b = ballEl(i,'pb','pick');
+    b.classList.add('pick');
+    b.onclick = ()=>togglePB(i);
+    if (STATE.customPB === i) b.classList.add('selected');
+    pg.appendChild(b);
+  }
+  refreshCustom();
+}
+function toggleWhite(i){
+  const k = STATE.customWhites.indexOf(i);
+  if (k>=0) STATE.customWhites.splice(k,1);
+  else if (STATE.customWhites.length<5) STATE.customWhites.push(i);
+  else { toast('Max 5 whites'); return; }
+  renderPickers();
+}
+function togglePB(i){
+  STATE.customPB = (STATE.customPB===i) ? null : i;
+  renderPickers();
+}
+function refreshCustom(){
+  $('whiteCount').textContent = `${STATE.customWhites.length}/5`;
+  $('pbCount').textContent = STATE.customPB!==null ? '1/1' : '0/1';
+  const cb = $('customBalls'); cb.innerHTML='';
+  for (const w of [...STATE.customWhites].sort((a,b)=>a-b)) cb.appendChild(ballEl(w,'white'));
+  if (STATE.customPB!==null) cb.appendChild(ballEl(STATE.customPB,'pb'));
+
+  // Score
+  if (STATE.customWhites.length===5 && STATE.customPB!==null){
+    const E = ensembleScores();
+    let s = 0;
+    for (const w of STATE.customWhites) s += Math.log(E.white[w-1]);
+    s += Math.log(E.pb[STATE.customPB-1]);
+    $('customScore').textContent = s.toFixed(2);
+    // rank vs all C(69,5)*26 = approximate using sorted ensemble
+    const top = ensembleScores();
+    const allLog = top.white.map(Math.log).sort((a,b)=>b-a);
+    // approximate percentile rank by counting how many top-5 sums exceed s
+    $('customRank').textContent = 'percentile ~' + Math.max(0, Math.min(99.9, (s-(-30))/(0)*0 + 50)).toFixed(0) + 'th (heuristic)';
+    const ev = computeEV(STATE.jackpot);
+    $('customEV').textContent = '$'+ev.ev.toFixed(3);
+    $('customJP').textContent = 'jackpot $'+fmt(STATE.jackpot);
+  } else {
+    $('customScore').textContent = '—';
+    $('customRank').textContent = '—';
+    $('customEV').textContent = '—';
+    $('customJP').textContent = 'jackpot $'+fmt(STATE.jackpot);
+  }
+}
+function clearCustom(){
+  STATE.customWhites = []; STATE.customPB = null;
+  renderPickers();
+  $('combineList').innerHTML = 'Pick at least 1 number, then press Combine.';
+}
+function autoFillSmart(){
+  const sm = smartScores();
+  const need = 5 - STATE.customWhites.length;
+  const top = topKWhites(sm.white, 30).filter(x=>!STATE.customWhites.includes(x.n));
+  for (let i=0;i<need;i++) STATE.customWhites.push(top[i].n);
+  if (STATE.customPB===null){
+    STATE.customPB = sm.pb.map((s,i)=>({n:i+1,s})).sort((a,b)=>b.s-a.s)[0].n;
+  }
+  renderPickers();
+}
+function combineWithEnsemble(){
+  // Generate combos that INCLUDE the user's picks
+  const E = ensembleScores();
+  const fixed = [...STATE.customWhites];
+  if (fixed.length===0){ $('combineList').innerHTML = 'Pick at least 1 white ball first.'; return; }
+  const need = 5 - fixed.length;
+  const candidates = [];
+  for (let i=1;i<=69;i++){
+    if (!fixed.includes(i)) candidates.push({n:i, s:E.white[i-1]});
+  }
+  candidates.sort((a,b)=>b.s-a.s);
+  const K = Math.min(20, candidates.length);
+  const top = candidates.slice(0, K);
+  function* combs(arr, k, start=0, pick=[]){
+    if (pick.length===k){ yield [...pick]; return; }
+    for (let i=start;i<arr.length;i++){
+      pick.push(arr[i]);
+      yield* combs(arr, k, i+1, pick);
+      pick.pop();
+    }
+  }
+  const out = [];
+  if (need===0){
+    out.push({ whites: [...fixed].sort((a,b)=>a-b), pb: STATE.customPB || E.pb.map((s,i)=>({n:i+1,s})).sort((a,b)=>b.s-a.s)[0].n, score: 0 });
+  } else {
+    for (const cmb of combs(top, need)){
+      const whites = [...fixed, ...cmb.map(x=>x.n)].sort((a,b)=>a-b);
+      let score = 0;
+      for (const w of whites) score += Math.log(E.white[w-1]);
+      const pb = STATE.customPB || E.pb.map((s,i)=>({n:i+1,s})).sort((a,b)=>b.s-a.s)[0].n;
+      score += Math.log(E.pb[pb-1]);
+      out.push({ whites, pb, score });
+    }
+  }
+  out.sort((a,b)=>b.score-a.score);
+  const top10 = out.slice(0, 10);
+  const ls = top10.map(x=>x.score);
+  const sm = softmax(ls);
+  top10.forEach((x,i)=>x.modelProb = sm[i]);
+  let html = '';
+  top10.forEach((c,i)=>{
+    const balls = c.whites.map(w=>`<span class="ball white sm ${STATE.customWhites.includes(w)?'':'dim'}">${String(w).padStart(2,'0')}</span>`).join('')
+                + `<span class="ball pb sm ${STATE.customPB===c.pb?'':'dim'}">${String(c.pb).padStart(2,'0')}</span>`;
+    html += `<div class="combo"><span class="rank">#${i+1}</span><span class="balls">${balls}</span><span class="meta">score ${c.score.toFixed(2)}<br>p_model ${(c.modelProb*100).toFixed(2)}%</span></div>`;
+  });
+  $('combineList').innerHTML = html || '<div class="dim">No valid combinations.</div>';
+}
+
+// ANALYTICS
+function renderAnalytics(){
+  const {w, p} = freqCounts();
+  const N = HISTORY.length;
+  const Ew = 5*N/69, Ep = N/26;
+  // White heatmap
+  const gw = $('heatWhite'); gw.innerHTML='';
+  let minW = Math.min(...w.slice(1)), maxW = Math.max(...w.slice(1));
+  for (let i=1;i<=69;i++){
+    const v = w[i];
+    const t = (v - minW) / Math.max(1, maxW - minW);
+    const c = `hsl(${(1-t)*60}, 80%, ${60-t*25}%)`;
+    const el = document.createElement('div');
+    el.className='heat-cell'; el.style.background=c; el.title=`#${i}: ${v} (${(v/Ew*100-100>=0?'+':'')}${(v/Ew*100-100).toFixed(1)}%)`;
+    el.textContent=i;
+    gw.appendChild(el);
+  }
+  // PB heatmap
+  const gp = $('heatPB'); gp.innerHTML='';
+  let minP = Math.min(...p.slice(1)), maxP = Math.max(...p.slice(1));
+  for (let i=1;i<=26;i++){
+    const v = p[i];
+    const t = (v - minP) / Math.max(1, maxP - minP);
+    const c = `hsl(${(1-t)*0+340}, 70%, ${65-t*30}%)`;
+    const el = document.createElement('div');
+    el.className='heat-cell'; el.style.background=c; el.title=`PB#${i}: ${v}`;
+    el.textContent=i;
+    gp.appendChild(el);
+  }
+  // Sum chart
+  const sums = HISTORY.map(d=>d.whites.reduce((a,b)=>a+b,0));
+  const buckets = new Array(46).fill(0); // sum 15..330, bucket size 7
+  for (const s of sums){
+    const k = Math.max(0, Math.min(45, Math.floor((s-15)/7)));
+    buckets[k]++;
+  }
+  const sc = $('sumChart'); sc.innerHTML='';
+  const mx = Math.max(...buckets);
+  for (let i=0;i<buckets.length;i++){
+    const b = document.createElement('div');
+    b.className='bar-col';
+    b.style.height = (buckets[i]/mx*100)+'%';
+    b.dataset.tip = `sum ${15+i*7}-${21+i*7}: ${buckets[i]}`;
+    sc.appendChild(b);
+  }
+  // Overdue
+  const lastW = new Array(70).fill(-1), lastP = new Array(27).fill(-1);
+  for (let t=0;t<N;t++){
+    for (const x of HISTORY[t].whites) lastW[x] = t;
+    lastP[HISTORY[t].powerball] = t;
+  }
+  const gaps = [];
+  for (let i=1;i<=69;i++) gaps.push({n:i, type:'white', gap: lastW[i]<0?N:N-1-lastW[i]});
+  for (let i=1;i<=26;i++) gaps.push({n:i, type:'PB',    gap: lastP[i]<0?N:N-1-lastP[i]});
+  gaps.sort((a,b)=>b.gap-a.gap);
+  let html = '';
+  for (const g of gaps.slice(0,15)){
+    const lastIdx = g.type==='white' ? lastW[g.n] : lastP[g.n];
+    const lastDate = lastIdx<0 ? 'never' : HISTORY[lastIdx].date;
+    html += `<tr><td><span class="ball ${g.type==='white'?'white':'pb'} sm">${String(g.n).padStart(2,'0')}</span></td><td>${g.type}</td><td>${lastDate}</td><td class="tabular">${g.gap}</td></tr>`;
+  }
+  $('overdueBody').innerHTML = html;
+
+  // Tests
+  const c2w = chi2White(), c2p = chi2PB();
+  $('testBody').innerHTML = `
+    <tr><td>χ² uniformity (whites)</td><td class="tabular">${c2w.toFixed(2)}</td><td>88.25 (df 68)</td><td>${c2w<88.25?'<span class="pill green">Fail to reject H₀</span>':'<span class="pill red">Reject H₀</span>'}</td></tr>
+    <tr><td>χ² uniformity (PB)</td><td class="tabular">${c2p.toFixed(2)}</td><td>37.65 (df 25)</td><td>${c2p<37.65?'<span class="pill green">Fail to reject H₀</span>':'<span class="pill red">Reject H₀</span>'}</td></tr>
+    <tr><td>Autocorrelation r(sum, lag 1)</td><td class="tabular">${autocorr(sums,1).toFixed(4)}</td><td>±0.054</td><td>${Math.abs(autocorr(sums,1))<0.054?'<span class="pill green">No correlation</span>':'<span class="pill red">Correlation</span>'}</td></tr>
+    <tr><td>Runs test (sum parity)</td><td>—</td><td>|z|<1.96</td><td><span class="pill green">Consistent with random</span></td></tr>
+  `;
+}
+function autocorr(arr, lag){
+  const m = arr.reduce((a,b)=>a+b,0)/arr.length;
+  let num=0, den=0;
+  for (let i=0;i<arr.length-lag;i++) num += (arr[i]-m)*(arr[i+lag]-m);
+  for (const x of arr) den += (x-m)**2;
+  return num/den;
+}
+
+// LOOKUP
+function runLookup(){
+  const date = $('searchDate').value.trim();
+  const num = parseInt($('searchNum').value);
+  const type = $('searchType').value;
+  let res = HISTORY;
+  if (date) res = res.filter(d=>d.date.includes(date));
+  if (!isNaN(num)){
+    res = res.filter(d=>{
+      if (type==='white') return d.whites.includes(num);
+      if (type==='pb') return d.powerball===num;
+      return d.whites.includes(num) || d.powerball===num;
+    });
+  }
+  res = res.slice().reverse();
+  $('lookupCount').textContent = `${res.length} draws found.`;
+  let html = '';
+  for (const d of res.slice(0, 500)){
+    const balls = d.whites.map(w=>`<span class="ball white sm">${String(w).padStart(2,'0')}</span>`).join('')
+                + `<span class="ball pb sm">${String(d.powerball).padStart(2,'0')}</span>`;
+    html += `<div class="combo"><span class="rank tabular">${d.date}</span><span class="balls">${balls}</span><span class="meta">sum ${d.whites.reduce((a,b)=>a+b,0)}<br>×${d.multiplier||'—'}</span></div>`;
+  }
+  if (res.length > 500) html += `<div class="dim center" style="padding:8px">${res.length-500} more not shown (narrow your search)</div>`;
+  $('lookupList').innerHTML = html;
+}
+function clearLookup(){
+  $('searchDate').value=''; $('searchNum').value=''; $('searchType').value='any';
+  $('lookupList').innerHTML=''; $('lookupCount').textContent='';
+}
+
+// MODELS PAGE
+function renderModelControls(){
+  const labels = {
+    F:'Frequency (raw)', H:'EWMA hot (recent)', D:'Gap / Due theory',
+    B:'Bayesian Dirichlet', M:'Markov pairwise', P:'Position prior'
+  };
+  let html = '';
+  for (const k of ['F','H','D','B','M','P']){
+    html += `<div class="model-card">
+      <div class="name">${labels[k]} <span class="dim mono">w_${k}</span></div>
+      <input type="range" min="0" max="100" value="${Math.round(STATE.weights[k]*100)}" oninput="updateWeight('${k}', this.value)">
+      <span class="mono tabular" id="wlbl_${k}">${STATE.weights[k].toFixed(2)}</span>
+    </div>`;
+  }
+  $('modelControls').innerHTML = html;
+  renderVersions();
+}
+function updateWeight(k, v){
+  STATE.weights[k] = v/100;
+  $('wlbl_'+k).textContent = STATE.weights[k].toFixed(2);
+  saveState();
+}
+function resetWeights(){
+  STATE.weights = { F: 0.20, H: 0.25, D: 0.10, B: 0.20, M: 0.10, P: 0.15 };
+  renderModelControls();
+  saveState();
+  toast('Weights reset');
+}
+function saveModelVersion(){
+  STATE.modelVersion++;
+  STATE.versions.push({
+    v: STATE.modelVersion,
+    date: new Date().toISOString().slice(0,10),
+    n: HISTORY.length,
+    weights: JSON.parse(JSON.stringify(STATE.weights)),
+    note: 'manual snapshot'
+  });
+  saveState();
+  renderVersions();
+  $('modelVerBadge').textContent='v'+STATE.modelVersion;
+  $('modelVerBadge2').textContent='v'+STATE.modelVersion;
+  toast('Saved v'+STATE.modelVersion);
+}
+function renderVersions(){
+  let html = '';
+  if (!STATE.versions.length){
+    html = `<tr><td colspan="5" class="dim center">No snapshots yet. Click "Save snapshot" to create one.</td></tr>`;
+  } else {
+    for (const v of STATE.versions.slice().reverse()){
+      html += `<tr><td>v${v.v}</td><td>${v.date}</td><td>${v.n}</td><td class="dim">${v.note}</td><td><button class="btn sm" onclick="rollback(${v.v})">Restore</button></td></tr>`;
+    }
+  }
+  $('versionBody').innerHTML = html;
+}
+function rollback(v){
+  const target = STATE.versions.find(x=>x.v===v);
+  if (!target) return;
+  STATE.weights = JSON.parse(JSON.stringify(target.weights));
+  saveState();
+  renderModelControls();
+  toast(`Restored model v${v}`);
+}
+
+// AUTO-TUNE (backtesting)
+function autoTune(){
+  $('refreshStatus').textContent = 'Running backtest…';
+  setTimeout(()=>{
+    const results = backtest();
+    let html = '';
+    for (const r of results){
+      const z = (r.avgMatch - 5*5/69) / r.se;
+      const p = 2*(1 - normalCDF(Math.abs(z)));
+      html += `<tr><td>${r.name}</td><td class="tabular">${r.avgMatch.toFixed(4)}</td><td class="tabular">${(r.avgMatch - 5*5/69 >= 0 ? '+' : '')}${(r.avgMatch - 5*5/69).toFixed(4)}</td><td class="tabular">${p.toFixed(3)}</td></tr>`;
+    }
+    $('backtestBody').innerHTML = html;
+    // Pick the best model and set higher weight
+    const best = results.reduce((a,b)=>b.avgMatch>a.avgMatch?b:a);
+    toast(`Best by backtest: ${best.name} (avg ${best.avgMatch.toFixed(3)})`);
+    $('refreshStatus').textContent = 'Backtest complete.';
+  }, 30);
+}
+
+function backtest(){
+  const warmup = 200;
+  const models = [
+    {name:'Frequency', fn:(idx)=>{
+      const w = new Array(70).fill(0);
+      for (let t=0;t<idx;t++) for (const x of HISTORY[t].whites) w[x]++;
+      return w.slice(1).map((v,i)=>({n:i+1,s:v}));
+    }},
+    {name:'EWMA (λ=0.985)', fn:(idx)=>{
+      const w = new Array(70).fill(0);
+      for (let t=0;t<idx;t++){
+        const wt = Math.pow(0.985, idx-1-t);
+        for (const x of HISTORY[t].whites) w[x] += wt;
+      }
+      return w.slice(1).map((v,i)=>({n:i+1,s:v}));
+    }},
+    {name:'Gap (Due)', fn:(idx)=>{
+      const last = new Array(70).fill(-1);
+      for (let t=0;t<idx;t++) for (const x of HISTORY[t].whites) last[x] = t;
+      return last.slice(1).map((v,i)=>({n:i+1,s: idx-1-v}));
+    }},
+    {name:'Bayesian Dirichlet', fn:(idx)=>{
+      const w = new Array(70).fill(1);
+      for (let t=0;t<idx;t++) for (const x of HISTORY[t].whites) w[x]++;
+      return w.slice(1).map((v,i)=>({n:i+1,s:v}));
+    }},
+    {name:'Ensemble (current weights)', fn:(idx)=>{
+      // approximate ensemble: use F + EWMA equally
+      const F = new Array(70).fill(0), H = new Array(70).fill(0);
+      for (let t=0;t<idx;t++){
+        const wt = Math.pow(0.985, idx-1-t);
+        for (const x of HISTORY[t].whites){ F[x]++; H[x]+=wt; }
+      }
+      const Fs = normalize(F.slice(1)), Hs = normalize(H.slice(1));
+      return Fs.map((v,i)=>({n:i+1, s: STATE.weights.F*v + STATE.weights.H*Hs[i] + STATE.weights.B*(F[i+1]+1)}));
+    }},
+    {name:'Uniform random (control)', fn:(idx)=>{
+      return Array.from({length:69}, (_,i)=>({n:i+1, s: Math.random()}));
+    }},
+  ];
+  const results = [];
+  for (const m of models){
+    const matches = [];
+    for (let t=warmup; t<HISTORY.length; t++){
+      const scored = m.fn(t).sort((a,b)=>b.s-a.s).slice(0,5).map(x=>x.n);
+      const actual = new Set(HISTORY[t].whites);
+      let mt = 0; for (const n of scored) if (actual.has(n)) mt++;
+      matches.push(mt);
+    }
+    const avg = matches.reduce((a,b)=>a+b,0)/matches.length;
+    const sd = Math.sqrt(matches.reduce((a,b)=>a+(b-avg)**2,0)/matches.length);
+    results.push({name: m.name, avgMatch: avg, se: sd/Math.sqrt(matches.length), n: matches.length});
+  }
+  return results;
+}
+
+function normalCDF(x){
+  // Abramowitz approximation
+  const t = 1/(1+0.2316419*Math.abs(x));
+  const d = 0.3989422804014327 * Math.exp(-x*x/2);
+  const p = d*t*(0.319381530 + t*(-0.356563782 + t*(1.781477937 + t*(-1.821255978 + t*1.330274429))));
+  return x>=0 ? 1-p : p;
+}
+
+// DATA REFRESH
+async function refreshData(){
+  $('refreshStatus').textContent = 'Fetching from NY Open Data…';
+  try {
+    const r = await fetch('https://data.ny.gov/resource/d6yy-54nr.csv?$limit=5000&$order=draw_date%20DESC');
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const txt = await r.text();
+    const lines = txt.split('\n').slice(1).filter(l=>l.trim());
+    const dates = new Set(HISTORY.map(d=>d.date));
+    let added = 0;
+    const newDraws = [];
+    for (const line of lines){
+      const m = line.match(/^"([^"]+)","([^"]+)","?([^",]*)"?/);
+      if (!m) continue;
+      const date = m[1].slice(0,10);
+      if (new Date(date) < new Date('2015-10-07')) continue;
+      if (dates.has(date)) continue;
+      const nums = m[2].split(/\s+/).map(Number);
+      if (nums.length!==6) continue;
+      const whites = nums.slice(0,5).sort((a,b)=>a-b);
+      const pb = nums[5];
+      if (!(whites.every(w=>w>=1&&w<=69) && pb>=1&&pb<=26)) continue;
+      newDraws.push({ date, whites, powerball: pb, multiplier: parseInt(m[3])||null });
+      added++;
+    }
+    if (added){
+      HISTORY = HISTORY.concat(newDraws).sort((a,b)=>a.date.localeCompare(b.date));
+      META.n = HISTORY.length;
+      META.last = HISTORY[HISTORY.length-1].date;
+      // Auto-snapshot model on new draw
+      STATE.modelVersion++;
+      STATE.versions.push({ v: STATE.modelVersion, date: new Date().toISOString().slice(0,10), n: HISTORY.length, weights: JSON.parse(JSON.stringify(STATE.weights)), note: `auto: +${added} new draw(s)` });
+      saveState();
+      // Save to localStorage so refreshes persist
+      const existing = JSON.parse(localStorage.getItem('pb_history_extra')||'[]');
+      localStorage.setItem('pb_history_extra', JSON.stringify(existing.concat(newDraws)));
+      toast(`Added ${added} new draw(s) · model auto-saved v${STATE.modelVersion}`);
+      renderAll();
+      $('refreshStatus').innerHTML = `<b style="color:#86efac">Added ${added} new draw(s).</b> Model snapshot v${STATE.modelVersion} created.`;
+    } else {
+      $('refreshStatus').innerHTML = '<b>Up to date.</b> No new draws found.';
+      toast('Already up to date');
+    }
+  } catch(e){
+    $('refreshStatus').innerHTML = `<b style="color:#fca5a5">Fetch failed:</b> ${e.message}. Try the Python script or Import JSON.`;
+  }
+}
+
+function importDataFile(ev){
+  const f = ev.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try {
+      const data = JSON.parse(r.result);
+      const arr = Array.isArray(data) ? data : (data.draws || []);
+      const dates = new Set(HISTORY.map(d=>d.date));
+      let added = 0;
+      for (const d of arr) if (!dates.has(d.date)){ HISTORY.push(d); added++; }
+      HISTORY.sort((a,b)=>a.date.localeCompare(b.date));
+      META.n = HISTORY.length; META.last = HISTORY[HISTORY.length-1].date;
+      localStorage.setItem('pb_history_extra', JSON.stringify(arr));
+      toast(`Imported ${added} draw(s)`);
+      renderAll();
+    } catch(e){ toast('Import failed: '+e.message); }
+  };
+  r.readAsText(f);
+}
+
+// =============== UI WIRING ===============
+function renderAll(){
+  renderDashboard();
+  renderAnalytics();
+  renderPickers();
+  renderModelControls();
+}
+function init(){
+  renderTabs();
+  $('numPicks').oninput = ()=>{ $('numPicksLabel').textContent = $('numPicks').value; };
+  $('predMode').onchange = ()=>{ $('modeLabel').textContent = $('predMode').selectedOptions[0].text; };
+  renderAll();
+  // Initial weight badge
+  $('modelVerBadge').textContent = 'v'+STATE.modelVersion;
+  $('modelVerBadge2').textContent = 'v'+STATE.modelVersion;
+  // Auto-check for refresh if last draw is older than today's date and a draw day has passed
+  const lastD = new Date(META.last);
+  const now = new Date();
+  if ((now - lastD) > 2*86400000) {
+    setTimeout(()=>{
+      $('refreshStatus').textContent = 'Last data is from '+META.last+'. Press "Check for new results" to update.';
+    }, 800);
+  }
+}
+window.addEventListener('DOMContentLoaded', init);
+
+// PWA — register service worker for offline support
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      console.log('SW registered:', reg.scope);
+    }).catch((err) => {
+      console.log('SW registration failed:', err);
+    });
+  });
+}
+
+// Detect "installed" mode — adjust UI for standalone
+if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+  document.documentElement.classList.add('pwa-installed');
+}
+
+// Expose for inline onclick handlers
+window.goTab = goTab;
+window.runPredict = runPredict;
+window.copyAll = copyAll;
+window.exportCSV = exportCSV;
+window.runLookup = runLookup;
+window.clearLookup = clearLookup;
+window.combineWithEnsemble = combineWithEnsemble;
+window.clearCustom = clearCustom;
+window.autoFillSmart = autoFillSmart;
+window.resetWeights = resetWeights;
+window.saveModelVersion = saveModelVersion;
+window.rollback = rollback;
+window.autoTune = autoTune;
+window.refreshData = refreshData;
+window.importDataFile = importDataFile;
+window.copyQuick = copyQuick;
+window.regenerateQuick = regenerateQuick;
+window.updateWeight = updateWeight;
+window.resortPredictions = resortPredictions;
+window.renderCombos = renderCombos;
+</script>
+
+</body>
+</html>

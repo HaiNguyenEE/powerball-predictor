@@ -1,0 +1,18 @@
+{
+  "name": "Powerball Predictor — Ensemble Lab",
+  "short_name": "Powerball",
+  "description": "Statistical research lab for US Powerball (5/69 + 1/26). Ensemble of frequency, EWMA, gap, Bayesian, Markov models with full math transparency.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0b0f17",
+  "theme_color": "#dc2626",
+  "lang": "vi",
+  "categories": ["utilities", "education", "finance"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+._*
+.Spotlight-V100
+.Trashes
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+
+# Local logs / scratch
+data/model_snapshots.log
+data/powerball_raw.csv
+*.log
+
+# Editor
+.vscode/
+.idea/
+*.swp
