@@ -1525,6 +1525,31 @@ if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').then((reg) => {
       console.log('SW registered:', reg.scope);
+      // Check for updates every time the page loads
+      reg.update();
+      // If a new SW is waiting, tell it to skip waiting and reload
+      function promoteWaiting(){
+        if (reg.waiting) {
+          reg.waiting.postMessage({type:'SKIP_WAITING'});
+        }
+      }
+      reg.addEventListener('updatefound', () => {
+        const sw = reg.installing;
+        if (!sw) return;
+        sw.addEventListener('statechange', () => {
+          if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+            // New version available — activate immediately
+            promoteWaiting();
+          }
+        });
+      });
+      // When the controlling SW changes, reload once to pick up new assets
+      let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloaded) return;
+        reloaded = true;
+        location.reload();
+      });
     }).catch((err) => {
       console.log('SW registration failed:', err);
     });
