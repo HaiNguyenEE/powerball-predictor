@@ -1,12 +1,16 @@
 name: Auto-update Powerball data
 
-# Powerball draws Mon/Wed/Sat at 22:59 ET (≈ 02:59 / 03:59 UTC next day depending on DST).
-# Run ~1 hour after each draw to be safe — NY Open Data publishes within minutes
-# but we add buffer for delays. GitHub cron uses UTC and may have a ~15-30 min jitter.
+# Powerball draws Mon/Wed/Sat at 22:59 ET. NY Open Data publishes anywhere
+# from minutes to a few hours later. GitHub Actions cron jitter can add
+# another 15-180 min. So we schedule 5 attempts spaced through the day.
 on:
   schedule:
-    - cron: '30 4 * * 2,4,0'      # Tue / Thu / Sun at 04:30 UTC (after Mon/Wed/Sat draws)
-    - cron: '30 12 * * 2,4,0'     # Backup run at 12:30 UTC same day, in case the first failed
+    - cron: '30 4 * * 2,4,0'      # Tue / Thu / Sun  04:30 UTC  (~draw + 1h)
+    - cron: '30 6 * * 2,4,0'      # Tue / Thu / Sun  06:30 UTC  (+2h)
+    - cron: '30 9 * * 2,4,0'      # Tue / Thu / Sun  09:30 UTC  (+5h)
+    - cron: '30 12 * * 2,4,0'     # Tue / Thu / Sun  12:30 UTC  (+8h)
+    - cron: '30 16 * * 2,4,0'     # Tue / Thu / Sun  16:30 UTC  (+12h, last attempt)
+    # Idempotent — once a draw is committed, subsequent attempts no-op.
   workflow_dispatch:               # Allow manual trigger from the Actions tab
 
 permissions:
@@ -49,7 +53,6 @@ jobs:
             echo "✓ No new draws — repo already up to date."
             exit 0
           fi
-          # Extract last draw date for the commit message
           LAST_DATE=$(python3 -c "import json; d=json.load(open('data/powerball_history.json')); print(d[-1]['date'])")
           N=$(python3 -c "import json; d=json.load(open('data/powerball_history.json')); print(len(d))")
           git commit -m "Auto-update: draw $LAST_DATE (N=$N) [skip ci]"
