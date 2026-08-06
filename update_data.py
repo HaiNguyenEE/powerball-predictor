@@ -15,6 +15,7 @@ use different ball pools and are filtered out automatically.
 
 import json
 import csv
+import re
 import os
 import sys
 import urllib.request
@@ -103,13 +104,13 @@ def analytics(draws):
     }
 
 
-def build_html(draws):
+def build_html(draws, generated_at=None):
     if not TEMPLATE.exists():
         print(f"✗ template.html missing at {TEMPLATE}")
         sys.exit(1)
     data = {
         "meta": {
-            "generatedAt": datetime.now().isoformat(),
+            "generatedAt": generated_at or datetime.now().isoformat(),
             "first": draws[0]["date"],
             "last": draws[-1]["date"],
             "n": len(draws),
@@ -161,8 +162,19 @@ def main():
     ANALYTICS_JSON.write_text(json.dumps(stats, indent=2))
     print(f"  wrote {ANALYTICS_JSON}  (χ² white={stats['chi2_white']:.2f}  PB={stats['chi2_pb']:.2f})")
 
-    # Rebuild HTML
-    build_html(new_draws)
+    # Rebuild HTML.
+    # generatedAt means "when this data was produced", not "when this script last
+    # ran". Stamping datetime.now() on every run made app/index.html differ by that
+    # one string even when no draw was added, so the workflow's "no new draws"
+    # check never fired and all 5 scheduled attempts committed, pushed and
+    # triggered a Pages build. When nothing was added, reuse the timestamp already
+    # embedded in the previous build so the file comes out byte-identical.
+    prev_ts = None
+    if not added and OUTPUT.exists():
+        m = re.search(r'"generatedAt":"([^"]+)"', OUTPUT.read_text())
+        if m:
+            prev_ts = m.group(1)
+    build_html(new_draws, prev_ts)
 
     # Print model snapshot reminder
     if added:

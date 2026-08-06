@@ -53,6 +53,23 @@ jobs:
             echo "✓ No new draws — repo already up to date."
             exit 0
           fi
+          # Belt-and-braces pin for the bug fixed in update_data.py: a run that
+          # adds no draw must leave NO commit behind. Five scheduled attempts a
+          # day used to produce five byte-identical commits whose only content
+          # was the generatedAt stamp moving, and five Pages builds with it.
+          # Refuse to commit when no other file changed AND app/index.html is
+          # identical to HEAD once that one stamp is normalized away. A real
+          # change — new draw, edited template.html, edited analytics — differs
+          # somewhere else and still commits normally.
+          if git diff --staged --quiet -- ':!app/index.html' \
+             && git show HEAD:app/index.html \
+                | sed -E 's/"generatedAt":"[^"]*"/"generatedAt":"@"/' \
+                | cmp -s - <(sed -E 's/"generatedAt":"[^"]*"/"generatedAt":"@"/' app/index.html); then
+            echo "✓ Only the generatedAt stamp moved — nothing to commit."
+            git reset --quiet
+            git checkout -- .
+            exit 0
+          fi
           LAST_DATE=$(python3 -c "import json; d=json.load(open('data/powerball_history.json')); print(d[-1]['date'])")
           N=$(python3 -c "import json; d=json.load(open('data/powerball_history.json')); print(len(d))")
           git commit -m "Auto-update: draw $LAST_DATE (N=$N) [skip ci]"
