@@ -16654,5 +16654,17 @@
     ],
     "powerball": 9,
     "multiplier": 2
+  },
+  {
+    "date": "2026-08-15",
+    "whites": [
+      5,
+      8,
+      27,
+      29,
+      63
+    ],
+    "powerball": 13,
+    "multiplier": 2
   }
 ]
