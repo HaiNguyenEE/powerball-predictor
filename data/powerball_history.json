@@ -2100,6 +2100,18 @@
     "multiplier": 3
   },
   {
+    "date": "2017-06-10",
+    "whites": [
+      20,
+      26,
+      32,
+      38,
+      58
+    ],
+    "powerball": 3,
+    "multiplier": 2
+  },
+  {
     "date": "2017-06-14",
     "whites": [
       5,
@@ -6948,6 +6960,18 @@
     "multiplier": 3
   },
   {
+    "date": "2021-04-28",
+    "whites": [
+      16,
+      18,
+      35,
+      39,
+      53
+    ],
+    "powerball": 21,
+    "multiplier": 3
+  },
+  {
     "date": "2021-05-01",
     "whites": [
       35,
@@ -8376,6 +8400,18 @@
     "multiplier": 2
   },
   {
+    "date": "2022-03-12",
+    "whites": [
+      19,
+      20,
+      37,
+      39,
+      61
+    ],
+    "powerball": 8,
+    "multiplier": 2
+  },
+  {
     "date": "2022-03-14",
     "whites": [
       21,
@@ -8506,6 +8542,18 @@
     ],
     "powerball": 18,
     "multiplier": 3
+  },
+  {
+    "date": "2022-04-09",
+    "whites": [
+      6,
+      16,
+      31,
+      62,
+      66
+    ],
+    "powerball": 18,
+    "multiplier": 2
   },
   {
     "date": "2022-04-11",
@@ -9586,6 +9634,18 @@
     ],
     "powerball": 20,
     "multiplier": 3
+  },
+  {
+    "date": "2022-11-07",
+    "whites": [
+      10,
+      33,
+      41,
+      47,
+      56
+    ],
+    "powerball": 10,
+    "multiplier": 2
   },
   {
     "date": "2022-11-09",
@@ -16894,5 +16954,17 @@
     ],
     "powerball": 7,
     "multiplier": 3
+  },
+  {
+    "date": "2026-09-30",
+    "whites": [
+      4,
+      6,
+      23,
+      33,
+      44
+    ],
+    "powerball": 13,
+    "multiplier": 4
   }
 ]
