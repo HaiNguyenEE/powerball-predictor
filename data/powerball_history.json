@@ -17086,5 +17086,17 @@
     ],
     "powerball": 19,
     "multiplier": 2
+  },
+  {
+    "date": "2026-10-26",
+    "whites": [
+      18,
+      26,
+      49,
+      50,
+      54
+    ],
+    "powerball": 1,
+    "multiplier": 3
   }
 ]
